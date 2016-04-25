@@ -6,20 +6,15 @@ LD = nspire-gcc
 BINARY    ?= wolf3d
 DATADIR   = ./
 
-CFLAGS += -Os -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
-CFLAGS += -Wpointer-arith
-CFLAGS += -Wreturn-type
-CFLAGS += -Wwrite-strings
-CFLAGS += -Wcast-align
+CFLAGS += -Ofast
 
 ifdef DATADIR
 CFLAGS += -DDATADIR=\"$(DATADIR)\"
 endif
 
-CCFLAGS += -std=gnu99
 CXXFLAGS += $(CFLAGS)
 
-LDFLAGS += -lSDL -Wl,--as-needed -Wl,--gc-sections -flto
+LDFLAGS += -lSDL -Wl,--as-needed -flto
 
 SRCS :=
 SRCS += id_ca.cpp
@@ -70,9 +65,13 @@ $(BINARY): $(OBJS)
 	@echo '===> LD $@'
 	$(CXX) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
 
+gen :
+	genzehn --input wolf3d --output wolf.tns --compress
+	rm wolf3d
+
 .c.o:
 	@echo '===> CC $<'
-	$(CC) $(CCFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .cpp.o:
 	@echo '===> CXX $<'
@@ -80,7 +79,7 @@ $(BINARY): $(OBJS)
 
 .c.d:
 	@echo '===> DEP $<'
-	$(CC) $(CCFLAGS) -MM $< | sed 's#^$(@F:%.d=%.o):#$@ $(@:%.d=%.o):#' > $@
+	$(CC) $(CFLAGS) -MM $< | sed 's#^$(@F:%.d=%.o):#$@ $(@:%.d=%.o):#' > $@
 
 .cpp.d:
 	@echo '===> DEP $<'

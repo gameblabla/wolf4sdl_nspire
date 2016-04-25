@@ -51,7 +51,7 @@ unsigned tics;
 // control info
 //
 int dirscan[4] = { sc_UpArrow, sc_RightArrow, sc_DownArrow, sc_LeftArrow };
-int buttonscan[NUMBUTTONS] = { sc_Control, sc_Alt, sc_LShift, sc_Space, sc_1, sc_2, sc_3, sc_4 };
+int buttonscan[NUMBUTTONS] = { sc_Control, sc_Alt, sc_LShift, sc_BackSpace, sc_1, sc_2, sc_3, sc_4 };
 
 int viewsize;
 
@@ -306,7 +306,7 @@ void PollControls (void)
         lasttimecount += DEMOTICS;
         int32_t timediff = (lasttimecount * 100) / 7 - curtime;
         if(timediff > 0)
-            SDL_Delay(timediff);
+            //SDL_Delay(timediff);
 
         if(timediff < -2 * DEMOTICS)       // more than 2-times DEMOTICS behind?
             lasttimecount = (curtime * 7) / 100;    // yes, set to current timecount

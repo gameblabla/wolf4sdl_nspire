@@ -1067,9 +1067,6 @@ void DrawPlayerWeapon (void)
 
 void CalcTics (void)
 {
-//
-// calculate tics since last refresh for adaptive timing
-//
     if (lasttimecount > (int32_t) GetTimeCount())
         lasttimecount = GetTimeCount();    // if the game was paused a LONG time
 
@@ -1078,7 +1075,7 @@ void CalcTics (void)
     if(!tics)
     {
         // wait until end of current tic
-        SDL_Delay(((lasttimecount + 1) * 100) / 7 - curtime);
+        //SDL_Delay(((lasttimecount + 1) * 100) / 7 - curtime);
         tics = 1;
     }
 

@@ -715,7 +715,7 @@ typedef void (* statefunc) (void *);
 
 typedef struct statestruct
 {
-    boolean rotate;
+    short rotate;
     short   shapenum;           // a shapenum of -1 means get from ob->temp1
     short   tictime;
     void    (*think) (void *),(*action) (void *);

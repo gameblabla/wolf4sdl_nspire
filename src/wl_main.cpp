@@ -1403,22 +1403,12 @@ static void DemoLoop()
 ==========================
 */
 
-int main (int argc, char **argv)
+int main (int argc, char *argv[])
 {
-	#ifdef _TINSPIRE
-	show_msgbox("Wolf", "enable_relative_paths");
-	#endif	
 	#ifdef _TINSPIRE
 	enable_relative_paths(argv);
 	#endif
-
-	#ifdef _TINSPIRE
-	show_msgbox("Wolf", "CheckForEpisodes");
-	#endif	
     CheckForEpisodes();
-	#ifdef _TINSPIRE
-	show_msgbox("Wolf", "After");
-	#endif	
 
     InitGame();
 
