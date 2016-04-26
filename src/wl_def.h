@@ -20,8 +20,7 @@
 #	define O_BINARY 0
 #endif
 
-/* Don't enable this on TI Nspire */
-//#pragma pack(1)
+#pragma pack(1)
 
 #if defined(_arch_dreamcast)
 #define YESBUTTONNAME "A"
