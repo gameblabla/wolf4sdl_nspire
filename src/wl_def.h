@@ -20,6 +20,14 @@
 #	define O_BINARY 0
 #endif
 
+#define GetTimeCount()  ((SDL_GetTicks()*7)/100)
+#define TickBase        70      // 70Hz per tick - used as a base for timer 0
+
+inline void Delay(int wolfticks)
+{
+    if(wolfticks>0) SDL_Delay(wolfticks * 100 / 7);
+}
+
 //#pragma pack(1)
 
 #if defined(_arch_dreamcast)
@@ -71,7 +79,6 @@ typedef struct
 void Quit(const char *errorStr, ...);
 
 #include "id_pm.h"
-#include "id_sd.h"
 #include "id_in.h"
 #include "id_vl.h"
 #include "id_vh.h"
@@ -969,15 +976,13 @@ extern  boolean         spearflag;
 #endif
 
 
-#define ClearMemory SD_StopDigitized
-
-
 // JAB
+/*
 #define PlaySoundLocTile(s,tx,ty)       PlaySoundLocGlobal(s,(((int32_t)(tx) << TILESHIFT) + (1L << (TILESHIFT - 1))),(((int32_t)ty << TILESHIFT) + (1L << (TILESHIFT - 1))))
 #define PlaySoundLocActor(s,ob)         PlaySoundLocGlobal(s,(ob)->x,(ob)->y)
 void    PlaySoundLocGlobal(word s,fixed gx,fixed gy);
 void UpdateSoundLoc(void);
-
+*/
 
 /*
 =============================================================================
@@ -1045,9 +1050,6 @@ void    FinishPaletteShifts (void);
 
 void    RemoveObj (objtype *gone);
 void    PollControls (void);
-int     StopMusic(void);
-void    StartMusic(void);
-void    ContinueMusic(int offs);
 void    StartDamageFlash (int damage);
 void    StartBonusFlash (void);
 
@@ -1322,7 +1324,6 @@ void SpawnFat (int tilex, int tiley);
 void SpawnFakeHitler (int tilex, int tiley);
 void SpawnHitler (int tilex, int tiley);
 
-void A_DeathScream (objtype *ob);
 void SpawnBJVictory (void);
 
 /*

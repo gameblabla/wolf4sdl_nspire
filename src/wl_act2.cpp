@@ -224,9 +224,7 @@ void    T_Fake (objtype *ob);
 void    T_FakeFire (objtype *ob);
 void    T_Ghosts (objtype *ob);
 
-void A_Slurpie (objtype *ob);
 void A_HitlerMorph (objtype *ob);
-void A_MechaSound (objtype *ob);
 
 /*
 =================
@@ -331,13 +329,11 @@ void T_Projectile (objtype *ob)
 #ifndef APOGEE_1_0          // actually the whole method is never reached in shareware 1.0
         if (ob->obclass == rocketobj)
         {
-            PlaySoundLocActor(MISSILEHITSND,ob);
             ob->state = &s_boom1;
         }
 #ifdef SPEAR
         else if (ob->obclass == hrocketobj)
         {
-            PlaySoundLocActor(MISSILEHITSND,ob);
             ob->state = &s_hboom1;
         }
 #endif
@@ -1066,110 +1062,7 @@ void SpawnPatrol (enemy_t which, int tilex, int tiley, int dir)
 
 void A_DeathScream (objtype *ob)
 {
-#ifndef UPLOAD
-#ifndef SPEAR
-    if (mapon==9 && !US_RndT())
-#else
-    if ((mapon==18 || mapon==19) && !US_RndT())
-#endif
-    {
-        switch(ob->obclass)
-        {
-            case mutantobj:
-            case guardobj:
-            case officerobj:
-            case ssobj:
-            case dogobj:
-                PlaySoundLocActor(DEATHSCREAM6SND,ob);
-                return;
-        }
-    }
-#endif
 
-    switch (ob->obclass)
-    {
-        case mutantobj:
-            PlaySoundLocActor(AHHHGSND,ob);
-            break;
-
-        case guardobj:
-        {
-            int sounds[9]={ DEATHSCREAM1SND,
-                DEATHSCREAM2SND,
-                DEATHSCREAM3SND,
-#ifndef APOGEE_1_0
-                DEATHSCREAM4SND,
-                DEATHSCREAM5SND,
-                DEATHSCREAM7SND,
-                DEATHSCREAM8SND,
-                DEATHSCREAM9SND
-#endif
-            };
-
-#ifndef UPLOAD
-            PlaySoundLocActor(sounds[US_RndT()%8],ob);
-#else
-            PlaySoundLocActor(sounds[US_RndT()%2],ob);
-#endif
-            break;
-        }
-        case officerobj:
-            PlaySoundLocActor(NEINSOVASSND,ob);
-            break;
-        case ssobj:
-            PlaySoundLocActor(LEBENSND,ob); // JAB
-            break;
-        case dogobj:
-            PlaySoundLocActor(DOGDEATHSND,ob);      // JAB
-            break;
-#ifndef SPEAR
-        case bossobj:
-            SD_PlaySound(MUTTISND);                         // JAB
-            break;
-        case schabbobj:
-            SD_PlaySound(MEINGOTTSND);
-            break;
-        case fakeobj:
-            SD_PlaySound(HITLERHASND);
-            break;
-        case mechahitlerobj:
-            SD_PlaySound(SCHEISTSND);
-            break;
-        case realhitlerobj:
-            SD_PlaySound(EVASND);
-            break;
-#ifndef APOGEE_1_0
-        case gretelobj:
-            SD_PlaySound(MEINSND);
-            break;
-        case giftobj:
-            SD_PlaySound(DONNERSND);
-            break;
-        case fatobj:
-            SD_PlaySound(ROSESND);
-            break;
-#endif
-#else
-        case spectreobj:
-            SD_PlaySound(GHOSTFADESND);
-            break;
-        case angelobj:
-            SD_PlaySound(ANGELDEATHSND);
-            break;
-        case transobj:
-            SD_PlaySound(TRANSDEATHSND);
-            break;
-        case uberobj:
-            SD_PlaySound(UBERDEATHSND);
-            break;
-        case willobj:
-            SD_PlaySound(WILHELMDEATHSND);
-            break;
-        case deathobj:
-            SD_PlaySound(KNIGHTDEATHSND);
-            break;
-#endif
-    }
 }
 
 
@@ -1228,7 +1121,7 @@ statetype s_transchase3         = {false,SPR_TRANS_W3,10,(statefunc)T_Chase,NULL
 statetype s_transchase3s        = {false,SPR_TRANS_W3,3,NULL,NULL,&s_transchase4};
 statetype s_transchase4         = {false,SPR_TRANS_W4,8,(statefunc)T_Chase,NULL,&s_transchase1};
 
-statetype s_transdie0           = {false,SPR_TRANS_W1,1,NULL,(statefunc)A_DeathScream,&s_transdie01};
+statetype s_transdie0           = {false,SPR_TRANS_W1,1,NULL,NULL,&s_transdie01};
 statetype s_transdie01          = {false,SPR_TRANS_W1,1,NULL,NULL,&s_transdie1};
 statetype s_transdie1           = {false,SPR_TRANS_DIE1,15,NULL,NULL,&s_transdie2};
 statetype s_transdie2           = {false,SPR_TRANS_DIE2,15,NULL,NULL,&s_transdie3};
@@ -1257,9 +1150,6 @@ void SpawnTrans (int tilex, int tiley)
 {
     //        word *map;
     //        word tile;
-
-    if (SoundBlasterPresent && DigiMode != sds_Off)
-        s_transdie01.tictime = 105;
 
     SpawnNewObj (tilex,tiley,&s_transstand);
     newobj->obclass = transobj;
@@ -1337,8 +1227,6 @@ statetype s_ubershoot7          = {false,SPR_UBER_SHOOT1,12,NULL,NULL,&s_ubercha
 
 void SpawnUber (int tilex, int tiley)
 {
-    if (SoundBlasterPresent && DigiMode != sds_Off)
-        s_uberdie01.tictime = 70;
 
     SpawnNewObj (tilex,tiley,&s_uberstand);
     newobj->obclass = uberobj;
@@ -1434,9 +1322,6 @@ statetype s_willshoot6          = {false,SPR_WILL_SHOOT4,10,NULL,(statefunc)T_Sh
 
 void SpawnWill (int tilex, int tiley)
 {
-    if (SoundBlasterPresent && DigiMode != sds_Off)
-        s_willdie2.tictime = 70;
-
     SpawnNewObj (tilex,tiley,&s_willstand);
     newobj->obclass = willobj;
     newobj->hitpoints = starthitpoints[gamestate.difficulty][en_will];
@@ -1611,9 +1496,6 @@ statetype s_deathshoot5         = {false,SPR_DEATH_SHOOT4,10,NULL,(statefunc)T_S
 
 void SpawnDeath (int tilex, int tiley)
 {
-    if (SoundBlasterPresent && DigiMode != sds_Off)
-        s_deathdie2.tictime = 105;
-
     SpawnNewObj (tilex,tiley,&s_deathstand);
     newobj->obclass = deathobj;
     newobj->hitpoints = starthitpoints[gamestate.difficulty][en_death];
@@ -1673,15 +1555,11 @@ void T_Launch (objtype *ob)
         case deathobj:
             newobj->state = &s_hrocket;
             newobj->obclass = hrocketobj;
-            PlaySoundLocActor (KNIGHTMISSILESND,newobj);
             break;
         case angelobj:
             newobj->state = &s_spark1;
             newobj->obclass = sparkobj;
-            PlaySoundLocActor (ANGELFIRESND,newobj);
             break;
-        default:
-            PlaySoundLocActor (MISSILEFIRESND,newobj);
     }
 
     newobj->dir = nodir;
@@ -1753,7 +1631,7 @@ statetype s_angelchase4         = {false,SPR_ANGEL_W4,8,(statefunc)T_Will,NULL,&
 
 statetype s_angeldie1           = {false,SPR_ANGEL_W1,1,NULL,(statefunc)A_DeathScream,&s_angeldie11};
 statetype s_angeldie11          = {false,SPR_ANGEL_W1,1,NULL,NULL,&s_angeldie2};
-statetype s_angeldie2           = {false,SPR_ANGEL_DIE1,10,NULL,(statefunc)A_Slurpie,&s_angeldie3};
+statetype s_angeldie2           = {false,SPR_ANGEL_DIE1,10,NULL,NULL,&s_angeldie3};
 statetype s_angeldie3           = {false,SPR_ANGEL_DIE2,10,NULL,NULL,&s_angeldie4};
 statetype s_angeldie4           = {false,SPR_ANGEL_DIE3,10,NULL,NULL,&s_angeldie5};
 statetype s_angeldie5           = {false,SPR_ANGEL_DIE4,10,NULL,NULL,&s_angeldie6};
@@ -1782,12 +1660,12 @@ statetype s_spark4              = {false,SPR_SPARK4,6,(statefunc)T_Projectile,NU
 
 void A_Slurpie (objtype *)
 {
-    SD_PlaySound(SLURPIESND);
+
 }
 
 void A_Breathing (objtype *)
 {
-    SD_PlaySound(ANGELTIREDSND);
+
 }
 
 /*
@@ -1800,9 +1678,6 @@ void A_Breathing (objtype *)
 
 void SpawnAngel (int tilex, int tiley)
 {
-    if (SoundBlasterPresent && DigiMode != sds_Off)
-        s_angeldie11.tictime = 105;
-
     SpawnNewObj (tilex,tiley,&s_angelstand);
     newobj->obclass = angelobj;
     newobj->hitpoints = starthitpoints[gamestate.difficulty][en_angel];
@@ -2214,10 +2089,7 @@ statetype s_fatshoot6           = {false,SPR_FAT_SHOOT4,10,NULL,(statefunc)T_Sho
 
 void SpawnSchabbs (int tilex, int tiley)
 {
-    if (DigiMode != sds_Off)
-        s_schabbdie2.tictime = 140;
-    else
-        s_schabbdie2.tictime = 5;
+	s_schabbdie2.tictime = 5;
 
     SpawnNewObj (tilex,tiley,&s_schabbstand);
     newobj->speed = SPDPATROL;
@@ -2241,10 +2113,7 @@ void SpawnSchabbs (int tilex, int tiley)
 
 void SpawnGift (int tilex, int tiley)
 {
-    if (DigiMode != sds_Off)
-        s_giftdie2.tictime = 140;
-    else
-        s_giftdie2.tictime = 5;
+	s_giftdie2.tictime = 5;
 
     SpawnNewObj (tilex,tiley,&s_giftstand);
     newobj->speed = SPDPATROL;
@@ -2268,10 +2137,7 @@ void SpawnGift (int tilex, int tiley)
 
 void SpawnFat (int tilex, int tiley)
 {
-    if (DigiMode != sds_Off)
-        s_fatdie2.tictime = 140;
-    else
-        s_fatdie2.tictime = 5;
+	s_fatdie2.tictime = 5;
 
     SpawnNewObj (tilex,tiley,&s_fatstand);
     newobj->speed = SPDPATROL;
@@ -2321,8 +2187,6 @@ void T_SchabbThrow (objtype *ob)
 
     newobj->flags = FL_NEVERMARK;
     newobj->active = ac_yes;
-
-    PlaySoundLocActor (SCHABBSTHROWSND,newobj);
 }
 
 /*
@@ -2360,10 +2224,6 @@ void T_GiftThrow (objtype *ob)
     newobj->speed = 0x2000l;
     newobj->flags = FL_NEVERMARK;
     newobj->active = ac_yes;
-
-#ifndef APOGEE_1_0          // T_GiftThrow will never be called in shareware v1.0
-    PlaySoundLocActor (MISSILEFIRESND,newobj);
-#endif
 }
 
 
@@ -2765,10 +2625,10 @@ extern  statetype s_hitlerdeathcam;
 
 statetype s_mechastand          = {false,SPR_MECHA_W1,0,(statefunc)T_Stand,NULL,&s_mechastand};
 
-statetype s_mechachase1         = {false,SPR_MECHA_W1,10,(statefunc)T_Chase,(statefunc)A_MechaSound,&s_mechachase1s};
+statetype s_mechachase1         = {false,SPR_MECHA_W1,10,(statefunc)T_Chase,NULL,&s_mechachase1s};
 statetype s_mechachase1s        = {false,SPR_MECHA_W1,6,NULL,NULL,&s_mechachase2};
 statetype s_mechachase2         = {false,SPR_MECHA_W2,8,(statefunc)T_Chase,NULL,&s_mechachase3};
-statetype s_mechachase3         = {false,SPR_MECHA_W3,10,(statefunc)T_Chase,(statefunc)A_MechaSound,&s_mechachase3s};
+statetype s_mechachase3         = {false,SPR_MECHA_W3,10,(statefunc)T_Chase,NULL,&s_mechachase3s};
 statetype s_mechachase3s        = {false,SPR_MECHA_W3,6,NULL,NULL,&s_mechachase4};
 statetype s_mechachase4         = {false,SPR_MECHA_W4,8,(statefunc)T_Chase,NULL,&s_mechachase1};
 
@@ -2796,7 +2656,7 @@ statetype s_hitlerdeathcam      = {false,SPR_HITLER_W1,10,NULL,NULL,&s_hitlerdie
 
 statetype s_hitlerdie1          = {false,SPR_HITLER_W1,1,NULL,(statefunc)A_DeathScream,&s_hitlerdie2};
 statetype s_hitlerdie2          = {false,SPR_HITLER_W1,10,NULL,NULL,&s_hitlerdie3};
-statetype s_hitlerdie3          = {false,SPR_HITLER_DIE1,10,NULL,(statefunc)A_Slurpie,&s_hitlerdie4};
+statetype s_hitlerdie3          = {false,SPR_HITLER_DIE1,10,NULL,NULL,&s_hitlerdie4};
 statetype s_hitlerdie4          = {false,SPR_HITLER_DIE2,10,NULL,NULL,&s_hitlerdie5};
 statetype s_hitlerdie5          = {false,SPR_HITLER_DIE3,10,NULL,NULL,&s_hitlerdie6};
 statetype s_hitlerdie6          = {false,SPR_HITLER_DIE4,10,NULL,NULL,&s_hitlerdie7};
@@ -2824,10 +2684,7 @@ statetype s_hitlershoot6        = {false,SPR_HITLER_SHOOT2,10,NULL,(statefunc)T_
 
 void SpawnFakeHitler (int tilex, int tiley)
 {
-    if (DigiMode != sds_Off)
-        s_hitlerdie2.tictime = 140;
-    else
-        s_hitlerdie2.tictime = 5;
+	s_hitlerdie2.tictime = 5;
 
     SpawnNewObj (tilex,tiley,&s_fakestand);
     newobj->speed = SPDPATROL;
@@ -2851,10 +2708,7 @@ void SpawnFakeHitler (int tilex, int tiley)
 
 void SpawnHitler (int tilex, int tiley)
 {
-    if (DigiMode != sds_Off)
-        s_hitlerdie2.tictime = 140;
-    else
-        s_hitlerdie2.tictime = 5;
+	s_hitlerdie2.tictime = 5;
 
 
     SpawnNewObj (tilex,tiley,&s_mechastand);
@@ -2897,22 +2751,6 @@ void A_HitlerMorph (objtype *ob)
 }
 
 
-////////////////////////////////////////////////////////
-//
-// A_MechaSound
-// A_Slurpie
-//
-////////////////////////////////////////////////////////
-void A_MechaSound (objtype *ob)
-{
-    if (areabyplayer[ob->areanumber])
-        PlaySoundLocActor (MECHSTEPSND,ob);
-}
-
-void A_Slurpie (objtype *)
-{
-    SD_PlaySound(SLURPIESND);
-}
 
 /*
 =================
@@ -2955,8 +2793,6 @@ void T_FakeFire (objtype *ob)
     newobj->speed = 0x1200l;
     newobj->flags = FL_NEVERMARK;
     newobj->active = ac_yes;
-
-    PlaySoundLocActor (FLAMETHROWERSND,newobj);
 }
 
 
@@ -3514,34 +3350,6 @@ void T_Shoot (objtype *ob)
             TakeDamage (damage,ob);
         }
     }
-
-    switch(ob->obclass)
-    {
-        case ssobj:
-            PlaySoundLocActor(SSFIRESND,ob);
-            break;
-#ifndef SPEAR
-#ifndef APOGEE_1_0
-        case giftobj:
-        case fatobj:
-            PlaySoundLocActor(MISSILEFIRESND,ob);
-            break;
-#endif
-        case mechahitlerobj:
-        case realhitlerobj:
-        case bossobj:
-            PlaySoundLocActor(BOSSFIRESND,ob);
-            break;
-        case schabbobj:
-            PlaySoundLocActor(SCHABBSTHROWSND,ob);
-            break;
-        case fakeobj:
-            PlaySoundLocActor(FLAMETHROWERSND,ob);
-            break;
-#endif
-        default:
-            PlaySoundLocActor(NAZIFIRESND,ob);
-    }
 }
 
 
@@ -3556,8 +3364,6 @@ void T_Shoot (objtype *ob)
 void T_Bite (objtype *ob)
 {
     int32_t    dx,dy;
-
-    PlaySoundLocActor(DOGATTACKSND,ob);     // JAB
 
     dx = player->x - ob->x;
     if (dx<0)
@@ -3598,7 +3404,6 @@ void T_Bite (objtype *ob)
 void T_BJRun (objtype *ob);
 void T_BJJump (objtype *ob);
 void T_BJDone (objtype *ob);
-void T_BJYell (objtype *ob);
 
 void T_DeathCam (objtype *ob);
 
@@ -3624,7 +3429,7 @@ statetype s_bjrun4              = {false,SPR_BJ_W4,8,(statefunc)T_BJRun,NULL,&s_
 
 
 statetype s_bjjump1             = {false,SPR_BJ_JUMP1,14,(statefunc)T_BJJump,NULL,&s_bjjump2};
-statetype s_bjjump2             = {false,SPR_BJ_JUMP2,14,(statefunc)T_BJJump,(statefunc)T_BJYell,&s_bjjump3};
+statetype s_bjjump2             = {false,SPR_BJ_JUMP2,14,(statefunc)T_BJJump,NULL,&s_bjjump3};
 statetype s_bjjump3             = {false,SPR_BJ_JUMP3,14,(statefunc)T_BJJump,NULL,&s_bjjump4};
 statetype s_bjjump4             = {false,SPR_BJ_JUMP4,300,NULL,(statefunc)T_BJDone,&s_bjjump4};
 
@@ -3707,18 +3512,6 @@ void T_BJJump (objtype *ob)
 }
 
 
-/*
-===============
-=
-= T_BJYell
-=
-===============
-*/
-
-void T_BJYell (objtype *ob)
-{
-    PlaySoundLocActor(YEAHSND,ob);  // JAB
-}
 
 
 /*

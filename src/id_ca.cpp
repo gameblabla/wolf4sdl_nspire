@@ -72,17 +72,14 @@ int     numEpisodesMissing = 0;
 =============================================================================
 */
 
-char extension[12]; // Need a string, not constant to change cache files
-char graphext[12];
-char audioext[12];
+char extension[16]; // Need a string, not constant to change cache files
+char graphext[16];
 static const char gheadname[] = DATADIR "vgahead.";
 static const char gfilename[] = DATADIR "vgagraph.";
 static const char gdictname[] = DATADIR "vgadict.";
 static const char mheadname[] = DATADIR "maphead.";
 static const char mfilename[] = DATADIR "maptemp.";
 static const char mfilecama[] = DATADIR "gamemaps.";
-static const char aheadname[] = DATADIR "audiohed.";
-static const char afilename[] = DATADIR "audiot.";
 
 void CA_CannotOpen(const char *string);
 
@@ -100,9 +97,6 @@ int    maphandle = -1;              // handle to MAPTEMP / GAMEMAPS
 int    audiohandle = -1;            // handle to AUDIOT / AUDIO
 
 int32_t   chunkcomplen,chunkexplen;
-
-SDMode oldsoundmode;
-
 
 static int32_t GRFILEPOS(const size_t idx)
 {
@@ -742,57 +736,8 @@ void CA_Shutdown (void)
     for(i=0; i<NUMCHUNKS; i++)
         UNCACHEGRCHUNK(i);
     free(pictable);
-
-    switch(oldsoundmode)
-    {
-        case sdm_Off:
-            return;
-        case sdm_PC:
-            start = STARTPCSOUNDS;
-            break;
-        case sdm_AdLib:
-            start = STARTADLIBSOUNDS;
-            break;
-    }
-
-    for(i=0; i<NUMSOUNDS; i++,start++)
-        UNCACHEAUDIOCHUNK(start);
 }
 
-//===========================================================================
-
-/*
-======================
-=
-= CA_CacheAudioChunk
-=
-======================
-*/
-
-int32_t CA_CacheAudioChunk (int chunk)
-{
-    return 0;
-}
-
-void CA_CacheAdlibSoundChunk (int chunk)
-{
-}
-
-//===========================================================================
-
-/*
-======================
-=
-= CA_LoadAllSounds
-=
-= Purges all sounds, then loads all new ones (mode switch)
-=
-======================
-*/
-
-void CA_LoadAllSounds (void)
-{
-}
 
 //===========================================================================
 

@@ -2,15 +2,35 @@ CC = nspire-gcc
 CXX = nspire-g++
 LD = nspire-gcc
 
+BINARY    = wolf3d
 
-BINARY    ?= wolf3d
 DATADIR   = ./
+
+WOLF_VERSION = SPEAR_DEMO
 
 CFLAGS += -Ofast -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
 
 ifdef DATADIR
 CFLAGS += -DDATADIR=\"$(DATADIR)\"
 endif
+
+ifeq ($(WOLF_VERSION),SHAREWARE)
+GEN_NAME  = wolf_shareware.tns
+CFLAGS += -DCARMACIZED -DUPLOAD
+else ifeq ($(WOLF_VERSION),ACTIVISION)
+GEN_NAME  = wolf_activision.tns
+CFLAGS += -DGOODTIMES -DCARMACIZED
+else ifeq ($(WOLF_VERSION),APOGEE)
+GEN_NAME  = wolf_apogee.tns
+CFLAGS += -DCARMACIZED
+else ifeq ($(WOLF_VERSION),SPEAR_FULL)
+GEN_NAME  = wolf_spear.tns
+CFLAGS += -DCARMACIZED -DSPEAR
+else ifeq ($(WOLF_VERSION),SPEAR_DEMO)
+GEN_NAME  = wolf_speardemo.tns
+CFLAGS += -DCARMACIZED -DSPEAR -DSPEARDEMO
+endif
+
 
 CXXFLAGS += $(CFLAGS)
 
@@ -20,7 +40,6 @@ SRCS :=
 SRCS += id_ca.cpp
 SRCS += id_in.cpp
 SRCS += id_pm.cpp
-SRCS += id_sd.cpp
 SRCS += id_us_1.cpp
 SRCS += id_vh.cpp
 SRCS += id_vl.cpp
@@ -43,47 +62,23 @@ SRCS += wl_state.cpp
 SRCS += wl_text.cpp
 SRCS += wl_shade.cpp
 
-DEPS = $(filter %.d, $(SRCS:.c=.d) $(SRCS:.cpp=.d))
 OBJS = $(filter %.o, $(SRCS:.c=.o) $(SRCS:.cpp=.o))
 
-.SUFFIXES:
-.SUFFIXES: .c .cpp .d .o
-
-Q ?= @
-
-all: $(BINARY)
-
-ifndef NO_DEPS
-depend: $(DEPS)
-
-ifeq ($(findstring $(MAKECMDGOALS), clean depend Data),)
--include $(DEPS)
-endif
-endif
+all: $(BINARY) gen
 
 $(BINARY): $(OBJS)
-	@echo '===> LD $@'
 	$(CXX) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
 
 gen :
-	genzehn --input wolf3d --output wolf.tns --compress
-	rm wolf3d
+	genzehn --input $(BINARY) --output wolf3d.t --compress
+	make-prg wolf3d.t $(GEN_NAME)
+	rm $(BINARY) wolf3d.t
 
 .c.o:
-	@echo '===> CC $<'
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .cpp.o:
-	@echo '===> CXX $<'
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-.c.d:
-	@echo '===> DEP $<'
-	$(CC) $(CFLAGS) -MM $< | sed 's#^$(@F:%.d=%.o):#$@ $(@:%.d=%.o):#' > $@
-
-.cpp.d:
-	@echo '===> DEP $<'
-	$(CXX) $(CXXFLAGS) -MM $< | sed 's#^$(@F:%.d=%.o):#$@ $(@:%.d=%.o):#' > $@
 
 clean distclean:
 	@echo '===> CLEAN'

@@ -110,10 +110,6 @@ boolean param_ignorenumchunks = false;
 
 void ReadConfig(void)
 {
-    SDMode  sd;
-    SMMode  sm;
-    SDSMode sds;
-
     char configpath[300];
 
 #ifdef _arch_dreamcast
@@ -145,10 +141,6 @@ void ReadConfig(void)
         }
         read(file,Scores,sizeof(HighScore) * MaxScores);
 
-        read(file,&sd,sizeof(sd));
-        read(file,&sm,sizeof(sm));
-        read(file,&sds,sizeof(sds));
-
         read(file,dirscan,sizeof(dirscan));
         read(file,buttonscan,sizeof(buttonscan));
 
@@ -157,15 +149,6 @@ void ReadConfig(void)
 
         close(file);
 
-        if ((sd == sdm_AdLib || sm == smm_AdLib) && !AdLibPresent
-                && !SoundBlasterPresent)
-        {
-            sd = sdm_PC;
-            sm = smm_Off;
-        }
-
-        if ((sds == sds_SoundBlaster && !SoundBlasterPresent))
-            sds = sds_Off;
 
         // make sure values are correct
         
@@ -184,26 +167,9 @@ void ReadConfig(void)
         // no config file, so select by hardware
         //
 noconfig:
-        if (SoundBlasterPresent || AdLibPresent)
-        {
-            sd = sdm_AdLib;
-            sm = smm_AdLib;
-        }
-        else
-        {
-            sd = sdm_PC;
-            sm = smm_Off;
-        }
-
-		sds = sds_Off;
-            
         viewsize = 21;                          // start with a good size
         mouseadjustment=5;
     }
-
-    SD_SetMusicMode (sm);
-    SD_SetSoundMode (sd);
-    SD_SetDigiDevice (sds);
 }
 
 /*
@@ -238,10 +204,6 @@ void WriteConfig(void)
         word tmp=0xfefa;
         write(file,&tmp,sizeof(tmp));
         write(file,Scores,sizeof(HighScore) * MaxScores);
-
-        write(file,&SoundMode,sizeof(SoundMode));
-        write(file,&MusicMode,sizeof(MusicMode));
-        write(file,&DigiMode,sizeof(DigiMode));
 
         write(file,dirscan,sizeof(dirscan));
         write(file,buttonscan,sizeof(buttonscan));
@@ -636,7 +598,6 @@ boolean LoadTheGame(FILE *file,int x,int y)
 void ShutdownId (void)
 {
     US_Shutdown ();         // This line is completely useless...
-    SD_Shutdown ();
     PM_Shutdown ();
     IN_Shutdown ();
     VW_Shutdown ();
@@ -871,130 +832,6 @@ void FinishSignon (void)
 //   0: player weapons
 //   1: boss weapons
 
-static int wolfdigimap[] =
-    {
-        // These first sounds are in the upload version
-#ifndef SPEAR
-        HALTSND,                0,  -1,
-        DOGBARKSND,             1,  -1,
-        CLOSEDOORSND,           2,  -1,
-        OPENDOORSND,            3,  -1,
-        ATKMACHINEGUNSND,       4,   0,
-        ATKPISTOLSND,           5,   0,
-        ATKGATLINGSND,          6,   0,
-        SCHUTZADSND,            7,  -1,
-        GUTENTAGSND,            8,  -1,
-        MUTTISND,               9,  -1,
-        BOSSFIRESND,            10,  1,
-        SSFIRESND,              11, -1,
-        DEATHSCREAM1SND,        12, -1,
-        DEATHSCREAM2SND,        13, -1,
-        DEATHSCREAM3SND,        13, -1,
-        TAKEDAMAGESND,          14, -1,
-        PUSHWALLSND,            15, -1,
-
-        LEBENSND,               20, -1,
-        NAZIFIRESND,            21, -1,
-        SLURPIESND,             22, -1,
-
-        YEAHSND,                32, -1,
-
-#ifndef UPLOAD
-        // These are in all other episodes
-        DOGDEATHSND,            16, -1,
-        AHHHGSND,               17, -1,
-        DIESND,                 18, -1,
-        EVASND,                 19, -1,
-
-        TOT_HUNDSND,            23, -1,
-        MEINGOTTSND,            24, -1,
-        SCHABBSHASND,           25, -1,
-        HITLERHASND,            26, -1,
-        SPIONSND,               27, -1,
-        NEINSOVASSND,           28, -1,
-        DOGATTACKSND,           29, -1,
-        LEVELDONESND,           30, -1,
-        MECHSTEPSND,            31, -1,
-
-        SCHEISTSND,             33, -1,
-        DEATHSCREAM4SND,        34, -1,         // AIIEEE
-        DEATHSCREAM5SND,        35, -1,         // DEE-DEE
-        DONNERSND,              36, -1,         // EPISODE 4 BOSS DIE
-        EINESND,                37, -1,         // EPISODE 4 BOSS SIGHTING
-        ERLAUBENSND,            38, -1,         // EPISODE 6 BOSS SIGHTING
-        DEATHSCREAM6SND,        39, -1,         // FART
-        DEATHSCREAM7SND,        40, -1,         // GASP
-        DEATHSCREAM8SND,        41, -1,         // GUH-BOY!
-        DEATHSCREAM9SND,        42, -1,         // AH GEEZ!
-        KEINSND,                43, -1,         // EPISODE 5 BOSS SIGHTING
-        MEINSND,                44, -1,         // EPISODE 6 BOSS DIE
-        ROSESND,                45, -1,         // EPISODE 5 BOSS DIE
-
-#endif
-#else
-//
-// SPEAR OF DESTINY DIGISOUNDS
-//
-        HALTSND,                0,  -1,
-        CLOSEDOORSND,           2,  -1,
-        OPENDOORSND,            3,  -1,
-        ATKMACHINEGUNSND,       4,   0,
-        ATKPISTOLSND,           5,   0,
-        ATKGATLINGSND,          6,   0,
-        SCHUTZADSND,            7,  -1,
-        BOSSFIRESND,            8,   1,
-        SSFIRESND,              9,  -1,
-        DEATHSCREAM1SND,        10, -1,
-        DEATHSCREAM2SND,        11, -1,
-        TAKEDAMAGESND,          12, -1,
-        PUSHWALLSND,            13, -1,
-        AHHHGSND,               15, -1,
-        LEBENSND,               16, -1,
-        NAZIFIRESND,            17, -1,
-        SLURPIESND,             18, -1,
-        LEVELDONESND,           22, -1,
-        DEATHSCREAM4SND,        23, -1,         // AIIEEE
-        DEATHSCREAM3SND,        23, -1,         // DOUBLY-MAPPED!!!
-        DEATHSCREAM5SND,        24, -1,         // DEE-DEE
-        DEATHSCREAM6SND,        25, -1,         // FART
-        DEATHSCREAM7SND,        26, -1,         // GASP
-        DEATHSCREAM8SND,        27, -1,         // GUH-BOY!
-        DEATHSCREAM9SND,        28, -1,         // AH GEEZ!
-        GETGATLINGSND,          38, -1,         // Got Gat replacement
-
-#ifndef SPEARDEMO
-        DOGBARKSND,             1,  -1,
-        DOGDEATHSND,            14, -1,
-        SPIONSND,               19, -1,
-        NEINSOVASSND,           20, -1,
-        DOGATTACKSND,           21, -1,
-        TRANSSIGHTSND,          29, -1,         // Trans Sight
-        TRANSDEATHSND,          30, -1,         // Trans Death
-        WILHELMSIGHTSND,        31, -1,         // Wilhelm Sight
-        WILHELMDEATHSND,        32, -1,         // Wilhelm Death
-        UBERDEATHSND,           33, -1,         // Uber Death
-        KNIGHTSIGHTSND,         34, -1,         // Death Knight Sight
-        KNIGHTDEATHSND,         35, -1,         // Death Knight Death
-        ANGELSIGHTSND,          36, -1,         // Angel Sight
-        ANGELDEATHSND,          37, -1,         // Angel Death
-        GETSPEARSND,            39, -1,         // Got Spear replacement
-#endif
-#endif
-        LASTSOUND
-    };
-
-
-void InitDigiMap (void)
-{
-    int *map;
-
-    for (map = wolfdigimap; *map != LASTSOUND; map += 3)
-    {
-        DigiMap[map[0]] = map[1];
-        DigiChannel[map[1]] = map[2];
-        SD_PrepareSound(map[1]);
-    }
-}
 
 #ifndef SPEAR
 CP_iteminfo MusicItems={CTL_X,CTL_Y,6,0,32};
@@ -1040,115 +877,8 @@ CP_itemtype MusicMenu[]=
 #ifndef SPEARDEMO
 void DoJukebox(void)
 {
-    int which,lastsong=-1;
-    unsigned start;
-    unsigned songs[]=
-        {
-#ifndef SPEAR
-            GETTHEM_MUS,
-            SEARCHN_MUS,
-            POW_MUS,
-            SUSPENSE_MUS,
-            WARMARCH_MUS,
-            CORNER_MUS,
-
-            NAZI_OMI_MUS,
-            PREGNANT_MUS,
-            GOINGAFT_MUS,
-            HEADACHE_MUS,
-            DUNGEON_MUS,
-            ULTIMATE_MUS,
-
-            INTROCW3_MUS,
-            NAZI_RAP_MUS,
-            TWELFTH_MUS,
-            ZEROHOUR_MUS,
-            ULTIMATE_MUS,
-            PACMAN_MUS
-#else
-            XFUNKIE_MUS,             // 0
-            XDEATH_MUS,              // 2
-            XTIPTOE_MUS,             // 4
-            XTHEEND_MUS,             // 7
-            XEVIL_MUS,               // 17
-            XJAZNAZI_MUS,            // 18
-            XPUTIT_MUS,              // 21
-            XGETYOU_MUS,             // 22
-            XTOWER2_MUS              // 23
-#endif
-        };
-
     IN_ClearKeysDown();
-    if (!AdLibPresent && !SoundBlasterPresent)
-        return;
-
-    MenuFadeOut();
-
-#ifndef SPEAR
-#ifndef UPLOAD
-    start = ((SDL_GetTicks()/10)%3)*6;
-#else
-    start = 0;
-#endif
-#else
-    start = 0;
-#endif
-
-    CA_CacheGrChunk (STARTFONT+1);
-#ifdef SPEAR
-    CacheLump (BACKDROP_LUMP_START,BACKDROP_LUMP_END);
-#else
-    CacheLump (CONTROLS_LUMP_START,CONTROLS_LUMP_END);
-#endif
-    CA_LoadAllSounds ();
-
-    fontnumber=1;
-    ClearMScreen ();
-    VWB_DrawPic(112,184,C_MOUSELBACKPIC);
-    DrawStripes (10);
-    SETFONTCOLOR (TEXTCOLOR,BKGDCOLOR);
-
-#ifndef SPEAR
-    DrawWindow (CTL_X-2,CTL_Y-6,280,13*7,BKGDCOLOR);
-#else
-    DrawWindow (CTL_X-2,CTL_Y-26,280,13*10,BKGDCOLOR);
-#endif
-
-    DrawMenu (&MusicItems,&MusicMenu[start]);
-
-    SETFONTCOLOR (READHCOLOR,BKGDCOLOR);
-    PrintY=15;
-    WindowX = 0;
-    WindowY = 320;
-    US_CPrint ("Robert's Jukebox");
-
-    SETFONTCOLOR (TEXTCOLOR,BKGDCOLOR);
-    VW_UpdateScreen();
-    MenuFadeIn();
-
-    do
-    {
-        which = HandleMenu(&MusicItems,&MusicMenu[start],NULL);
-        if (which>=0)
-        {
-            if (lastsong >= 0)
-                MusicMenu[start+lastsong].active = 1;
-
-            StartCPMusic(songs[start + which]);
-            MusicMenu[start+which].active = 2;
-            DrawMenu (&MusicItems,&MusicMenu[start]);
-            VW_UpdateScreen();
-            lastsong = which;
-        }
-    } while(which>=0);
-
-    MenuFadeOut();
-    IN_ClearKeysDown();
-#ifdef SPEAR
-    UnCacheLump (BACKDROP_LUMP_START,BACKDROP_LUMP_END);
-#else
-    UnCacheLump (CONTROLS_LUMP_START,CONTROLS_LUMP_END);
-#endif
+    return;
 }
 #endif
 
@@ -1174,14 +904,12 @@ static void InitGame()
     VH_Startup ();
     IN_Startup ();
     PM_Startup ();
-    SD_Startup ();
     CA_Startup ();
     US_Startup ();
 
 //
 // build some tables
 //
-    InitDigiMap ();
     ReadConfig ();
     SetupSaveGames();
 
@@ -1417,7 +1145,6 @@ static void DemoLoop()
         #endif
     #endif
 
-    StartCPMusic(INTROSONG);
 
 #ifndef JAPAN
     if (!param_nowait)
@@ -1493,7 +1220,6 @@ static void DemoLoop()
             VW_FadeOut();
             if(screenHeight % 200 != 0)
                 VL_ClearScreen(0);
-            StartCPMusic(INTROSONG);
         }
 
         VW_FadeOut ();
@@ -1513,7 +1239,6 @@ static void DemoLoop()
             if(!param_nowait)
             {
                 VW_FadeOut();
-                StartCPMusic(INTROSONG);
             }
         }
     }

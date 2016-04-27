@@ -771,7 +771,6 @@ void HelpScreens (void)
 #ifdef JAPAN
     ShowArticle (0);
     VW_FadeOut();
-    FreeMusic ();
     CA_DownLevel ();
     MM_SortMem ();
 #else
@@ -794,8 +793,6 @@ void HelpScreens (void)
 #endif
 
     VW_FadeOut();
-
-    FreeMusic ();
 #endif
 }
 #endif
@@ -811,8 +808,6 @@ void EndText (void)
     memptr  layout;
 #endif
 
-    ClearMemory ();
-
 #ifdef JAPAN
     ShowArticle(gamestate.episode + 1);
 
@@ -822,8 +817,6 @@ void EndText (void)
     IN_ClearKeysDown();
     if (MousePresent && IN_IsInputGrabbed())
         IN_CenterMouse();  // Clear accumulated mouse movement
-
-    FreeMusic ();
 #else
 
 
@@ -852,8 +845,6 @@ void EndText (void)
     IN_ClearKeysDown();
     if (MousePresent && IN_IsInputGrabbed())
         IN_CenterMouse();  // Clear accumulated mouse movement
-
-    FreeMusic ();
 #endif
 }
 #endif

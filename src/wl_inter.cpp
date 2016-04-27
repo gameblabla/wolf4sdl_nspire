@@ -127,8 +127,6 @@ Victory (void)
 
 
 #ifdef SPEAR
-    StartCPMusic (XTHEEND_MUS);
-
     CA_CacheGrChunk (BJCOLLAPSE1PIC);
     CA_CacheGrChunk (BJCOLLAPSE2PIC);
     CA_CacheGrChunk (BJCOLLAPSE3PIC);
@@ -156,7 +154,6 @@ Victory (void)
     VL_FadeOut (0, 255, 0, 17, 17, 5);
 #endif
 
-    StartCPMusic (URAHERO_MUS);
     ClearSplitVWB ();
     CacheLump (LEVELEND_LUMP_START, LEVELEND_LUMP_END);
     CA_CacheGrChunk (STARTFONT);
@@ -563,9 +560,7 @@ LevelCompleted (void)
 
     if (bordercol != VIEWCOLOR)
         DrawStatusBorder (VIEWCOLOR);
-
-    StartCPMusic (ENDLEVEL_MUS);
-
+        
 //
 // do the intermission
 //
@@ -671,20 +666,12 @@ LevelCompleted (void)
                 ltoa ((int32_t) i * PAR_AMOUNT, tempstr, 10);
                 x = 36 - (int) strlen(tempstr) * 2;
                 Write (x, 7, tempstr);
-                if (!(i % (PAR_AMOUNT / 10)))
-                    SD_PlaySound (ENDBONUS1SND);
                 VW_UpdateScreen ();
-                while(SD_SoundPlaying ())
-                    BJ_Breathe ();
                 if (IN_CheckAck ())
                     goto done;
             }
 
             VW_UpdateScreen ();
-
-            SD_PlaySound (ENDBONUS2SND);
-            while (SD_SoundPlaying ())
-                BJ_Breathe ();
         }
 
 
@@ -702,11 +689,7 @@ LevelCompleted (void)
             itoa (i, tempstr, 10);
             x = RATIOXX - (int) strlen(tempstr) * 2;
             Write (x, 14, tempstr);
-            if (!(i % 10))
-                SD_PlaySound (ENDBONUS1SND);
             VW_UpdateScreen ();
-            while (SD_SoundPlaying ())
-                BJ_Breathe ();
 
             if (IN_CheckAck ())
                 goto done;
@@ -714,26 +697,18 @@ LevelCompleted (void)
         if (ratio >= 100)
         {
             VW_WaitVBL (VBLWAIT);
-            SD_StopSound ();
             bonus += PERCENT100AMT;
             ltoa (bonus, tempstr, 10);
             x = (RATIOXX - 1) - (int) strlen(tempstr) * 2;
             Write (x, 7, tempstr);
             VW_UpdateScreen ();
-            SD_PlaySound (PERCENT100SND);
         }
         else if (!ratio)
         {
             VW_WaitVBL (VBLWAIT);
-            SD_StopSound ();
-            SD_PlaySound (NOBONUSSND);
         }
-        else
-            SD_PlaySound (ENDBONUS2SND);
 
         VW_UpdateScreen ();
-        while (SD_SoundPlaying ())
-            BJ_Breathe ();
 
         //
         // SECRET RATIO
@@ -744,11 +719,7 @@ LevelCompleted (void)
             itoa (i, tempstr, 10);
             x = RATIOXX - (int) strlen(tempstr) * 2;
             Write (x, 16, tempstr);
-            if (!(i % 10))
-                SD_PlaySound (ENDBONUS1SND);
 			VW_UpdateScreen ();
-            while (SD_SoundPlaying ())
-                BJ_Breathe ();
 
             if (IN_CheckAck ())
                 goto done;
@@ -756,25 +727,18 @@ LevelCompleted (void)
         if (ratio >= 100)
         {
             VW_WaitVBL (VBLWAIT);
-            SD_StopSound ();
             bonus += PERCENT100AMT;
             ltoa (bonus, tempstr, 10);
             x = (RATIOXX - 1) - (int) strlen(tempstr) * 2;
             Write (x, 7, tempstr);
             VW_UpdateScreen ();
-            SD_PlaySound (PERCENT100SND);
         }
         else if (!ratio)
         {
             VW_WaitVBL (VBLWAIT);
-            SD_StopSound ();
-            SD_PlaySound (NOBONUSSND);
         }
-        else
-            SD_PlaySound (ENDBONUS2SND);
+
         VW_UpdateScreen ();
-        while (SD_SoundPlaying ())
-            BJ_Breathe ();
 
         //
         // TREASURE RATIO
@@ -785,36 +749,26 @@ LevelCompleted (void)
             itoa (i, tempstr, 10);
             x = RATIOXX - (int) strlen(tempstr) * 2;
             Write (x, 18, tempstr);
-            if (!(i % 10))
-                SD_PlaySound (ENDBONUS1SND);
 			VW_UpdateScreen ();
-            while (SD_SoundPlaying ())
-                BJ_Breathe ();
             if (IN_CheckAck ())
                 goto done;
         }
         if (ratio >= 100)
         {
             VW_WaitVBL (VBLWAIT);
-            SD_StopSound ();
             bonus += PERCENT100AMT;
             ltoa (bonus, tempstr, 10);
             x = (RATIOXX - 1) - (int) strlen(tempstr) * 2;
             Write (x, 7, tempstr);
             VW_UpdateScreen ();
-            SD_PlaySound (PERCENT100SND);
         }
         else if (!ratio)
         {
             VW_WaitVBL (VBLWAIT);
-            SD_StopSound ();
-            SD_PlaySound (NOBONUSSND);
+
         }
-        else
-            SD_PlaySound (ENDBONUS2SND);
+
         VW_UpdateScreen ();
-        while (SD_SoundPlaying ())
-            BJ_Breathe ();
 
 
         //
@@ -902,8 +856,6 @@ done:   itoa (kr, tempstr, 10);
 #ifdef SPEARDEMO
     if (gamestate.mapon == 1)
     {
-        SD_PlaySound (BONUS1UPSND);
-
         CA_CacheGrChunk (STARTFONT + 1);
         Message ("This concludes your demo\n"
                  "of Spear of Destiny! Now,\n" "go to your local software\n" "store and buy it!");
@@ -917,8 +869,6 @@ done:   itoa (kr, tempstr, 10);
 #ifdef JAPDEMO
     if (gamestate.mapon == 3)
     {
-        SD_PlaySound (BONUS1UPSND);
-
         CA_CacheGrChunk (STARTFONT + 1);
         Message ("This concludes your demo\n"
                  "of Wolfenstein 3-D! Now,\n" "go to your local software\n" "store and buy it!");
@@ -1205,11 +1155,6 @@ CheckHighScore (int32_t score, word other)
         }
     }
 
-#ifdef SPEAR
-    StartCPMusic (XAWARD_MUS);
-#else
-    StartCPMusic (ROSTER_MUS);
-#endif
     DrawHighScores ();
 
     VW_FadeIn ();
@@ -1497,8 +1442,7 @@ CopyProtection (void)
     CA_CacheGrChunk (C_BACKDROPPIC);
     CacheLump (COPYPROT_LUMP_START, COPYPROT_LUMP_END);
     CA_CacheGrChunk (STARTFONT + 1);
-    CA_LoadAllSounds ();
-    StartCPMusic (COPYPRO_MUS);
+
     US_InitRndT (true);
 
     while (attempt < 3)
@@ -1678,7 +1622,6 @@ CopyProtection (void)
             US_CPrint (CopyProFailedStrs[whichline + 1]);
 
             VW_UpdateScreen ();
-            SD_PlaySound (NOWAYSND);
             IN_UserInput (TickBase * 6);
             VW_FadeOut ();
             attempt++;
@@ -1686,23 +1629,9 @@ CopyProtection (void)
         else
         {
             int start;
-
-            SD_PlaySound (BONUS1UPSND);
-            SD_WaitSoundDone ();
             UNCACHEGRCHUNK (STARTFONT + 1);
             UNCACHEGRCHUNK (C_BACKDROPPIC);
             UnCacheLump (COPYPROT_LUMP_START, COPYPROT_LUMP_END);
-
-            switch (SoundMode)
-            {
-                case sdm_Off:
-                    return;
-                case sdm_PC:
-                    start = STARTPCSOUNDS;
-                    break;
-                case sdm_AdLib:
-                    start = STARTADLIBSOUNDS;
-            }
 
 /*                        for (i=0;i<NUMSOUNDS;i++,start++)
                                 MM_FreePtr ((memptr *)&audiosegs[start]); */
@@ -1710,7 +1639,6 @@ CopyProtection (void)
         }
     }
 
-    ClearMemory ();
     ShutdownId ();
 
     printf ("%s\n", DosMessages[US_RndT () % 9]);

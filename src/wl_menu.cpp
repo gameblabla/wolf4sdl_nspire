@@ -398,10 +398,7 @@ US_ControlPanel (ScanCode scancode)
     {
         if (CP_CheckQuick (scancode))
             return;
-        lastgamemusicoffset = StartCPMusic (MENUSONG);
     }
-    else
-        StartCPMusic (MENUSONG);
     SetupControlPanel ();
 
     //
@@ -474,10 +471,8 @@ US_ControlPanel (ScanCode scancode)
         if (Keyboard[sc_I] && Keyboard[sc_D])
         {
             VW_FadeOut ();
-            StartCPMusic (XJAZNAZI_MUS);
             UnCacheLump (OPTIONS_LUMP_START, OPTIONS_LUMP_END);
             UnCacheLump (BACKDROP_LUMP_START, BACKDROP_LUMP_END);
-            ClearMemory ();
 
 
             CA_CacheGrChunk (IDGUYS1PIC);
@@ -506,7 +501,6 @@ US_ControlPanel (ScanCode scancode)
             CacheLump (BACKDROP_LUMP_START, BACKDROP_LUMP_END);
             CacheLump (OPTIONS_LUMP_START, OPTIONS_LUMP_END);
             DrawMainMenu ();
-            StartCPMusic (MENUSONG);
             MenuFadeIn ();
         }
 #endif
@@ -529,8 +523,6 @@ US_ControlPanel (ScanCode scancode)
 
             case backtodemo:
                 StartGame = 1;
-                if (!ingame)
-                    StartCPMusic (INTROSONG);
                 VL_FadeOut (0, 255, 0, 0, 0, 10);
                 break;
 
@@ -658,9 +650,7 @@ DrawMainMenu (void)
 int
 CP_ReadThis (int)
 {
-    StartCPMusic (CORNER_MUS);
     HelpScreens ();
-    StartCPMusic (MENUSONG);
     return true;
 }
 #endif
@@ -678,7 +668,6 @@ BossKey (void)
 {
 #ifdef NOTYET
     byte palette1[256][3];
-    SD_MusicOff ();
 /*       _AX = 3;
         geninterrupt(0x10); */
     _asm
@@ -690,7 +679,6 @@ BossKey (void)
     IN_Ack ();
     IN_ClearKeysDown ();
 
-    SD_MusicOn ();
     VL_SetVGAPlaneMode ();
     for (int i = 0; i < 768; i++)
         palette1[0][i] = 0;
@@ -706,7 +694,6 @@ BossKey (void)
 {
 #ifdef NOTYET
     byte palette1[256][3];
-    SD_MusicOff ();
 /*       _AX = 3;
         geninterrupt(0x10); */
     _asm
@@ -718,7 +705,6 @@ BossKey (void)
     IN_Ack ();
     IN_ClearKeysDown ();
 
-    SD_MusicOn ();
     VL_SetVGAPlaneMode ();
     for (int i = 0; i < 768; i++)
         palette1[0][i] = 0;
@@ -795,7 +781,6 @@ CP_CheckQuick (ScanCode scancode)
                 if(screenHeight % 200 != 0)
                     VL_ClearScreen(0);
 
-                lastgamemusicoffset = StartCPMusic (MENUSONG);
                 pickquick = CP_SaveGame (0);
 
                 SETFONTCOLOR (0, 15);
@@ -803,9 +788,6 @@ CP_CheckQuick (ScanCode scancode)
                 VW_FadeOut();
                 if(viewsize != 21)
                     DrawPlayScreen ();
-
-                if (!startgame && !loadedgame)
-                    ContinueMusic (lastgamemusicoffset);
 
                 if (loadedgame)
                     playstate = ex_abort;
@@ -863,7 +845,6 @@ CP_CheckQuick (ScanCode scancode)
                 if(screenHeight % 200 != 0)
                     VL_ClearScreen(0);
 
-                lastgamemusicoffset = StartCPMusic (MENUSONG);
                 pickquick = CP_LoadGame (0);    // loads lastgamemusicoffs
 
                 SETFONTCOLOR (0, 15);
@@ -871,9 +852,6 @@ CP_CheckQuick (ScanCode scancode)
                 VW_FadeOut();
                 if(viewsize != 21)
                     DrawPlayScreen ();
-
-                if (!startgame && !loadedgame)
-                    ContinueMusic (lastgamemusicoffset);
 
                 if (loadedgame)
                     playstate = ex_abort;
@@ -913,8 +891,6 @@ CP_CheckQuick (ScanCode scancode)
 #endif
             {
                 VW_UpdateScreen ();
-                SD_MusicOff ();
-                SD_StopSound ();
                 MenuFadeOut ();
 
                 Quit (NULL);
@@ -973,9 +949,6 @@ CP_ViewScores (int)
 
 #ifdef SPEAR
     UnCacheLump (OPTIONS_LUMP_START, OPTIONS_LUMP_END);
-    StartCPMusic (XAWARD_MUS);
-#else
-    StartCPMusic (ROSTER_MUS);
 #endif
 
     DrawHighScores ();
@@ -985,7 +958,6 @@ CP_ViewScores (int)
 
     IN_Ack ();
 
-    StartCPMusic (MENUSONG);
     MenuFadeOut ();
 
 #ifdef SPEAR
@@ -1027,7 +999,6 @@ CP_NewGame (int)
             default:
                 if (!EpisodeSelect[which / 2])
                 {
-                    SD_PlaySound (NOWAYSND);
                     Message ("Please select \"Read This!\"\n"
                              "from the Options menu to\n"
                              "find out how to order this\n" "episode from Apogee.");
@@ -1046,8 +1017,6 @@ CP_NewGame (int)
 
     }
     while (!which);
-
-    ShootSnd ();
 
     //
     // ALREADY IN A GAME?
@@ -1098,7 +1067,6 @@ CP_NewGame (int)
 #endif
     }
 
-    ShootSnd ();
     NewGame (which, episode);
     StartGame = 1;
     MenuFadeOut ();
@@ -1239,85 +1207,15 @@ CP_Sound (int)
         //
         switch (which)
         {
-                //
-                // SOUND EFFECTS
-                //
             case 0:
-                if (SoundMode != sdm_Off)
-                {
-                    SD_WaitSoundDone ();
-                    SD_SetSoundMode (sdm_Off);
+			case 1:
+			case 2:
+			case 5:
+			case 7:
+			case 10:
+			case 11:
                     DrawSoundMenu ();
-                }
-                break;
-            case 1:
-                if (SoundMode != sdm_PC)
-                {
-                    SD_WaitSoundDone ();
-                    SD_SetSoundMode (sdm_PC);
-                    CA_LoadAllSounds ();
-                    DrawSoundMenu ();
-                    ShootSnd ();
-                }
-                break;
-            case 2:
-                if (SoundMode != sdm_AdLib)
-                {
-                    SD_WaitSoundDone ();
-                    SD_SetSoundMode (sdm_AdLib);
-                    CA_LoadAllSounds ();
-                    DrawSoundMenu ();
-                    ShootSnd ();
-                }
-                break;
-
-                //
-                // DIGITIZED SOUND
-                //
-            case 5:
-                if (DigiMode != sds_Off)
-                {
-                    SD_SetDigiDevice (sds_Off);
-                    DrawSoundMenu ();
-                }
-                break;
-            case 6:
-/*                if (DigiMode != sds_SoundSource)
-                {
-                    SD_SetDigiDevice (sds_SoundSource);
-                    DrawSoundMenu ();
-                    ShootSnd ();
-                }*/
-                break;
-            case 7:
-                if (DigiMode != sds_SoundBlaster)
-                {
-                    SD_SetDigiDevice (sds_SoundBlaster);
-                    DrawSoundMenu ();
-                    ShootSnd ();
-                }
-                break;
-
-                //
-                // MUSIC
-                //
-            case 10:
-                if (MusicMode != smm_Off)
-                {
-                    SD_SetMusicMode (smm_Off);
-                    DrawSoundMenu ();
-                    ShootSnd ();
-                }
-                break;
-            case 11:
-                if (MusicMode != smm_AdLib)
-                {
-                    SD_SetMusicMode (smm_AdLib);
-                    DrawSoundMenu ();
-                    ShootSnd ();
-                    StartCPMusic (MENUSONG);
-                }
-                break;
+			break;
         }
     }
     while (which >= 0);
@@ -1356,18 +1254,9 @@ DrawSoundMenu (void)
     DrawWindow (SM_X - 8, SM_Y3 - 3, SM_W, SM_H3, BKGDCOLOR);
 #endif
 
-    //
-    // IF NO ADLIB, NON-CHOOSENESS!
-    //
-    if (!AdLibPresent && !SoundBlasterPresent)
-    {
-        SndMenu[2].active = SndMenu[10].active = SndMenu[11].active = 0;
-    }
 
-    if (!SoundBlasterPresent)
+		SndMenu[2].active = SndMenu[10].active = SndMenu[11].active = 0;
         SndMenu[7].active = 0;
-
-    if (!SoundBlasterPresent)
         SndMenu[5].active = 0;
 
     DrawMenu (&SndItems, &SndMenu[0]);
@@ -1388,57 +1277,7 @@ DrawSoundMenu (void)
             // DRAW SELECTED/NOT SELECTED GRAPHIC BUTTONS
             //
             on = 0;
-            switch (i)
-            {
-                    //
-                    // SOUND EFFECTS
-                    //
-                case 0:
-                    if (SoundMode == sdm_Off)
-                        on = 1;
-                    break;
-                case 1:
-                    if (SoundMode == sdm_PC)
-                        on = 1;
-                    break;
-                case 2:
-                    if (SoundMode == sdm_AdLib)
-                        on = 1;
-                    break;
-
-                    //
-                    // DIGITIZED SOUND
-                    //
-                case 5:
-                    if (DigiMode == sds_Off)
-                        on = 1;
-                    break;
-                case 6:
-//                    if (DigiMode == sds_SoundSource)
-//                        on = 1;
-                    break;
-                case 7:
-                    if (DigiMode == sds_SoundBlaster)
-                        on = 1;
-                    break;
-
-                    //
-                    // MUSIC
-                    //
-                case 10:
-                    if (MusicMode == smm_Off)
-                        on = 1;
-                    break;
-                case 11:
-                    if (MusicMode == smm_AdLib)
-                        on = 1;
-                    break;
-            }
-
-            if (on)
-                VWB_DrawPic (SM_X + 24, SM_Y1 + i * 13 + 2, C_SELECTEDPIC);
-            else
-                VWB_DrawPic (SM_X + 24, SM_Y1 + i * 13 + 2, C_NOTSELECTEDPIC);
+			VWB_DrawPic (SM_X + 24, SM_Y1 + i * 13 + 2, C_NOTSELECTEDPIC);
         }
 
     DrawMenuGun (&SndItems);
@@ -1526,7 +1365,6 @@ CP_LoadGame (int quick)
             DrawKeys ();
             DrawWeapon ();
             DrawScore ();
-            ContinueMusic (lastgamemusicoffset);
             return 1;
         }
     }
@@ -1800,7 +1638,6 @@ CP_SaveGame (int quick)
                          LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
                 PrintLSEntry (which, HIGHLIGHT);
                 VW_UpdateScreen ();
-                SD_PlaySound (ESCPRESSEDSND);
                 continue;
             }
 
@@ -1943,7 +1780,6 @@ MouseSensitivity (int)
                     DrawOutline (60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
                     VWB_Bar (61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
                     VW_UpdateScreen ();
-                    SD_PlaySound (MOVEGUN1SND);
                     TicDelay(20);
                 }
                 break;
@@ -1958,7 +1794,6 @@ MouseSensitivity (int)
                     DrawOutline (60 + 20 * mouseadjustment, 97, 20, 10, 0, READCOLOR);
                     VWB_Bar (61 + 20 * mouseadjustment, 98, 19, 9, READHCOLOR);
                     VW_UpdateScreen ();
-                    SD_PlaySound (MOVEGUN1SND);
                     TicDelay(20);
                 }
                 break;
@@ -1975,10 +1810,7 @@ MouseSensitivity (int)
     if (exit == 2)
     {
         mouseadjustment = oldMA;
-        SD_PlaySound (ESCPRESSEDSND);
     }
-    else
-        SD_PlaySound (SHOOTSND);
 
     WaitKeyUp ();
     MenuFadeOut ();
@@ -2220,7 +2052,6 @@ EnterCtrlData (int index, CustomCtrls * cust, void (*DrawRtn) (int), void (*Prin
                         case 1:
                             PrintX = x;
                             US_Print ("?");
-                            SD_PlaySound (HITWALLSND);
                     }
                     tick ^= 1;
                     lastFlashTime = GetTimeCount();
@@ -2260,7 +2091,6 @@ EnterCtrlData (int index, CustomCtrls * cust, void (*DrawRtn) (int), void (*Prin
                 if (IN_KeyDown (sc_Escape) || type != JOYSTICK && ci.button1)
                 {
                     picked = 1;
-                    SD_PlaySound (ESCPRESSEDSND);
                 }
 
                 if(picked) break;
@@ -2291,7 +2121,6 @@ EnterCtrlData (int index, CustomCtrls * cust, void (*DrawRtn) (int), void (*Prin
                 }
                 while (!cust->allowed[which]);
                 redraw = 1;
-                SD_PlaySound (MOVEGUN1SND);
                 while (ReadAnyControl (&ci), ci.dir != dir_None) //SDL_Delay(5);
                 IN_ClearKeysDown ();
                 break;
@@ -2305,7 +2134,6 @@ EnterCtrlData (int index, CustomCtrls * cust, void (*DrawRtn) (int), void (*Prin
                 }
                 while (!cust->allowed[which]);
                 redraw = 1;
-                SD_PlaySound (MOVEGUN1SND);
                 while (ReadAnyControl (&ci), ci.dir != dir_None) //SDL_Delay(5);
                 IN_ClearKeysDown ();
                 break;
@@ -2316,7 +2144,6 @@ EnterCtrlData (int index, CustomCtrls * cust, void (*DrawRtn) (int), void (*Prin
     }
     while (!exit);
 
-    SD_PlaySound (ESCPRESSEDSND);
     WaitKeyUp ();
     DrawWindow (5, PrintY - 1, 310, 13, BKGDCOLOR);
 }
@@ -2714,7 +2541,6 @@ CP_ChangeView (int)
                 if(newview >= 19) DrawChangeView(newview);
                 else ShowViewSize (newview);
                 VW_UpdateScreen ();
-                SD_PlaySound (HITWALLSND);
                 TicDelay (10);
                 break;
 
@@ -2728,7 +2554,6 @@ CP_ChangeView (int)
                 }
                 else ShowViewSize (newview);
                 VW_UpdateScreen ();
-                SD_PlaySound (HITWALLSND);
                 TicDelay (10);
                 break;
         }
@@ -2737,7 +2562,6 @@ CP_ChangeView (int)
             exit = 1;
         else if (ci.button1 || Keyboard[sc_Escape])
         {
-            SD_PlaySound (ESCPRESSEDSND);
             MenuFadeOut ();
             if(screenHeight % 200 != 0)
                 VL_ClearScreen(0);
@@ -2748,7 +2572,6 @@ CP_ChangeView (int)
 
     if (oldview != newview)
     {
-        SD_PlaySound (SHOOTSND);
         Message (STR_THINK "...");
         NewViewSize (newview);
     }
@@ -2813,8 +2636,6 @@ CP_Quit (int)
 #endif
     {
         VW_UpdateScreen ();
-        SD_MusicOff ();
-        SD_StopSound ();
         MenuFadeOut ();
         Quit (NULL);
     }
@@ -2894,15 +2715,6 @@ IntroScreen (void)
         VWB_Bar (129, 163 - 8 * i, 6, 5, XMSCOLOR - i);
 #endif
 
-
-    //
-    // FILL BOXES
-    //
-    if (AdLibPresent && !SoundBlasterPresent)
-        VWB_Bar (164, 128, 12, 2, FILLCOLOR);
-
-    if (SoundBlasterPresent)
-        VWB_Bar (164, 151, 12, 2, FILLCOLOR);
 
 //    if (SoundSourcePresent)
 //        VWB_Bar (164, 174, 12, 2, FILLCOLOR);
@@ -3006,9 +2818,7 @@ SetupControlPanel (void)
     if(screenHeight % 200 != 0)
         VL_ClearScreen(0);
 
-    if (!ingame)
-        CA_LoadAllSounds ();
-    else
+    if (ingame)
         MainMenu[savegame].active = 1;
 }
 
@@ -3302,10 +3112,6 @@ HandleMenu (CP_iteminfo * item_i, CP_itemtype * items, void (*routine) (int w))
                 (items + which)->routine (0);
             }
             return which;
-
-        case 2:
-            SD_PlaySound (ESCPRESSEDSND);
-            return -1;
     }
 
     return 0;                   // JUST TO SHUT UP THE ERROR MESSAGES!
@@ -3336,7 +3142,6 @@ DrawHalfStep (int x, int y)
 {
     VWB_DrawPic (x, y, C_CURSOR1PIC);
     VW_UpdateScreen ();
-    SD_PlaySound (MOVEGUN1SND);
     //SDL_Delay (8 * 100 / 7);
 }
 
@@ -3363,7 +3168,6 @@ DrawGun (CP_iteminfo * item_i, CP_itemtype * items, int x, int *y, int which, in
     if (routine)
         routine (which);
     VW_UpdateScreen ();
-    SD_PlaySound (MOVEGUN2SND);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -3539,9 +3343,7 @@ Confirm (const char *string)
 
     IN_ClearKeysDown ();
     WaitKeyUp ();
-
-    SD_PlaySound ((soundnames) whichsnd[xit]);
-
+    
     return xit;
 }
 
@@ -3602,7 +3404,7 @@ GetYorN (int x, int y, int pic)
 #endif
 
     IN_ClearKeysDown ();
-    SD_PlaySound (whichsnd[xit]);
+
     return xit;
 }
 #endif
@@ -3650,31 +3452,6 @@ Message (const char *string)
     VW_UpdateScreen ();
 }
 
-////////////////////////////////////////////////////////////////////
-//
-// THIS MAY BE FIXED A LITTLE LATER...
-//
-////////////////////////////////////////////////////////////////////
-static int lastmusic;
-
-int
-StartCPMusic (int song)
-{
-    int lastoffs;
-
-    lastmusic = song;
-    lastoffs = SD_MusicOff ();
-    UNCACHEAUDIOCHUNK (STARTMUSIC + lastmusic);
-
-    SD_StartMusic(STARTMUSIC + song);
-    return lastoffs;
-}
-
-void
-FreeMusic (void)
-{
-    UNCACHEAUDIOCHUNK (STARTMUSIC + lastmusic);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -3707,17 +3484,6 @@ CheckPause (void)
 {
     if (Paused)
     {
-        switch (SoundStatus)
-        {
-            case 0:
-                SD_MusicOn ();
-                break;
-            case 1:
-                SD_MusicOff ();
-                break;
-        }
-
-        SoundStatus ^= 1;
         VW_WaitVBL (3);
         IN_ClearKeysDown ();
         Paused = false;
@@ -3762,7 +3528,6 @@ DrawStripes (int y)
 void
 ShootSnd (void)
 {
-    SD_PlaySound (SHOOTSND);
 }
 
 
@@ -3826,7 +3591,7 @@ CheckForEpisodes (void)
     }
     else
     {
-        if(!stat(DATADIR "vswap.wl3.tns", &statbuf))
+	if(!stat(DATADIR "vswap.wl3.tns", &statbuf))
         {
             strcpy (extension, "wl3");
             numEpisodesMissing = 3;
@@ -3840,7 +3605,9 @@ CheckForEpisodes (void)
                 numEpisodesMissing = 5;
             }
             else
+            {
                 Quit ("NO WOLFENSTEIN 3-D DATA FILES to be found!");
+			}
         }
     }
 #endif
@@ -3880,7 +3647,6 @@ CheckForEpisodes (void)
     else
         Quit ("UNSUPPORTED MISSION!");
     strcpy (graphext, "sod");
-    strcpy (audioext, "sod");
 #else
     if(!stat(DATADIR "vswap.sdm.tns", &statbuf))
     {
@@ -3889,11 +3655,9 @@ CheckForEpisodes (void)
     else
         Quit ("NO SPEAR OF DESTINY DEMO DATA FILES TO BE FOUND!");
     strcpy (graphext, "sdm");
-    strcpy (audioext, "sdm");
 #endif
 #else
     strcpy (graphext, extension);
-    strcpy (audioext, extension);
 #endif
 
     strcat (configname, extension);

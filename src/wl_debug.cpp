@@ -397,10 +397,6 @@ void ShapeTest (void)
                 for (j = 0;j < ChunksInFile;j++)
                     PM_GetPage(j);
                 break;*/
-            case sc_P:
-                if (sound != -1)
-                    SD_PlayDigitized(sound,8,8);
-                break;
             case sc_Escape:
                 done = true;
                 break;
@@ -409,7 +405,6 @@ void ShapeTest (void)
                 break;*/
         }
     }
-    SD_StopDigitized();
 #endif
 }
 

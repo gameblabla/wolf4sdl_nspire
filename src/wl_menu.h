@@ -136,7 +136,6 @@ void ReadAnyControl(ControlInfo *ci);
 void TicDelay(int count);
 void CacheLump(int lumpstart,int lumpend);
 void UnCacheLump(int lumpstart,int lumpend);
-int StartCPMusic(int song);
 int  Confirm(const char *string);
 void Message(const char *string);
 void CheckPause(void);
@@ -196,8 +195,6 @@ int CustomControls(int);
 int MouseSensitivity(int);
 
 void CheckForEpisodes(void);
-
-void FreeMusic(void);
 
 
 enum {MOUSE,JOYSTICK,KEYBOARDBTNS,KEYBOARDMOVE};        // FOR INPUT TYPES

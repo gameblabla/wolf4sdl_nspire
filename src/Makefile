@@ -1,49 +1,43 @@
-BINARY    ?= wolf3d
-PREFIX    ?= /usr/local
-MANPREFIX ?= $(PREFIX)/share/man/
-MANPAGE   ?= man6/wolf4sdl.6
-DATADIR   ?= ./
+CC = gcc
+CXX = g++
+LD = gcc
 
-INSTALL         ?= install
-INSTALL_PROGRAM ?= $(INSTALL) -m 555 -s
-INSTALL_MAN     ?= $(INSTALL) -m 444
-INSTALL_DATA    ?= $(INSTALL) -m 444
+DATADIR   = ./
 
+WOLF_VERSION = SPEAR_DEMO
 
-SDL_CONFIG  ?= sdl-config
-CFLAGS_SDL  ?= -I/usr/include/SDL
-LDFLAGS_SDL ?= -lSDL
-
-
-CFLAGS += $(CFLAGS_SDL) -DUSE_SHADING
-
-#CFLAGS += -Wall
-#CFLAGS += -W
-CFLAGS += -Wpointer-arith
-CFLAGS += -Wreturn-type
-CFLAGS += -Wwrite-strings
-CFLAGS += -Wcast-align
-
+CFLAGS += -Ofast -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
 
 ifdef DATADIR
-    CFLAGS += -DDATADIR=\"$(DATADIR)\"
+CFLAGS += -DDATADIR=\"$(DATADIR)\"
 endif
 
-CCFLAGS += $(CFLAGS) -O0 -g
-CCFLAGS += -std=gnu99
-CCFLAGS += -Werror-implicit-function-declaration
-CCFLAGS += -Wimplicit-int
-CCFLAGS += -Wsequence-point
+ifeq ($(WOLF_VERSION),SHAREWARE)
+BINARY    = wolf3d_shareware
+CFLAGS += -DCARMACIZED -DUPLOAD
+else ifeq ($(WOLF_VERSION),ACTIVISION)
+BINARY    = wolf3d_activision
+CFLAGS += -DGOODTIMES -DCARMACIZED
+else ifeq ($(WOLF_VERSION),APOGEE)
+BINARY    = wolf3d_apogee
+CFLAGS += -DCARMACIZED
+else ifeq ($(WOLF_VERSION),SPEAR_FULL)
+BINARY    = wolf3d_spear
+CFLAGS += -DCARMACIZED -DSPEAR
+else ifeq ($(WOLF_VERSION),SPEAR_DEMO)
+BINARY    = wolf3d_speardemo
+CFLAGS += -DCARMACIZED -DSPEAR -DSPEARDEMO
+endif
+
 
 CXXFLAGS += $(CFLAGS)
 
-LDFLAGS += $(LDFLAGS_SDL)
+LDFLAGS += -lSDL -lm
 
 SRCS :=
 SRCS += id_ca.cpp
 SRCS += id_in.cpp
 SRCS += id_pm.cpp
-SRCS += id_sd.cpp
 SRCS += id_us_1.cpp
 SRCS += id_vh.cpp
 SRCS += id_vl.cpp
@@ -66,50 +60,19 @@ SRCS += wl_state.cpp
 SRCS += wl_text.cpp
 SRCS += wl_shade.cpp
 
-DEPS = $(filter %.d, $(SRCS:.c=.d) $(SRCS:.cpp=.d))
 OBJS = $(filter %.o, $(SRCS:.c=.o) $(SRCS:.cpp=.o))
-
-.SUFFIXES:
-.SUFFIXES: .c .cpp .d .o
-
-Q ?= @
 
 all: $(BINARY)
 
-ifndef NO_DEPS
-depend: $(DEPS)
-
-ifeq ($(findstring $(MAKECMDGOALS), clean depend Data),)
--include $(DEPS)
-endif
-endif
-
 $(BINARY): $(OBJS)
-	@echo '===> LD $@'
-	$(Q)$(CXX) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
+	$(CXX) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
 
 .c.o:
-	@echo '===> CC $<'
-	$(Q)$(CC) $(CCFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .cpp.o:
-	@echo '===> CXX $<'
-	$(Q)$(CXX) $(CXXFLAGS) -c $< -o $@
-
-.c.d:
-	@echo '===> DEP $<'
-	$(Q)$(CC) $(CCFLAGS) -MM $< | sed 's#^$(@F:%.d=%.o):#$@ $(@:%.d=%.o):#' > $@
-
-.cpp.d:
-	@echo '===> DEP $<'
-	$(Q)$(CXX) $(CXXFLAGS) -MM $< | sed 's#^$(@F:%.d=%.o):#$@ $(@:%.d=%.o):#' > $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean distclean:
 	@echo '===> CLEAN'
-	$(Q)rm -fr $(DEPS) $(OBJS) $(BINARY)
-
-install: $(BINARY)
-	@echo '===> INSTALL'
-	$(Q)$(INSTALL) -d $(PREFIX)/bin
-	$(Q)$(INSTALL_PROGRAM) $(BINARY) $(PREFIX)/bin
-	$(Q)$(INSTALL_MAN) $(MANPAGE) $(MANPREFIX)/man6
+	rm -fr $(DEPS) $(OBJS) $(BINARY)

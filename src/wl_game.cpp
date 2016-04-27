@@ -67,132 +67,6 @@ void GameLoop (void);
 /*
 ==========================
 =
-= SetSoundLoc - Given the location of an object (in terms of global
-=       coordinates, held in globalsoundx and globalsoundy), munges the values
-=       for an approximate distance from the left and right ear, and puts
-=       those values into leftchannel and rightchannel.
-=
-= JAB
-=
-==========================
-*/
-
-int leftchannel, rightchannel;
-#define ATABLEMAX 15
-byte righttable[ATABLEMAX][ATABLEMAX * 2] = {
-{ 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 7, 6, 0, 0, 0, 0, 0, 1, 3, 5, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 6, 4, 0, 0, 0, 0, 0, 2, 4, 6, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 4, 1, 0, 0, 0, 1, 2, 4, 6, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 6, 5, 4, 2, 1, 0, 1, 2, 3, 5, 7, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 6, 5, 4, 3, 2, 2, 3, 3, 5, 6, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 6, 6, 5, 4, 4, 4, 4, 5, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 6, 6, 5, 5, 5, 6, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 6, 6, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8}
-};
-byte lefttable[ATABLEMAX][ATABLEMAX * 2] = {
-{ 8, 8, 8, 8, 8, 8, 8, 8, 5, 3, 1, 0, 0, 0, 0, 0, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 6, 4, 2, 0, 0, 0, 0, 0, 4, 6, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 6, 4, 2, 1, 0, 0, 0, 1, 4, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 7, 5, 3, 2, 1, 0, 1, 2, 4, 5, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 6, 5, 3, 3, 2, 2, 3, 4, 5, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 5, 4, 4, 4, 4, 5, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 6, 5, 5, 5, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8},
-{ 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8}
-};
-
-void
-SetSoundLoc(fixed gx,fixed gy)
-{
-    fixed   xt,yt;
-    int     x,y;
-
-//
-// translate point to view centered coordinates
-//
-    gx -= viewx;
-    gy -= viewy;
-
-//
-// calculate newx
-//
-    xt = FixedMul(gx,viewcos);
-    yt = FixedMul(gy,viewsin);
-    x = (xt - yt) >> TILESHIFT;
-
-//
-// calculate newy
-//
-    xt = FixedMul(gx,viewsin);
-    yt = FixedMul(gy,viewcos);
-    y = (yt + xt) >> TILESHIFT;
-
-    if (y >= ATABLEMAX)
-        y = ATABLEMAX - 1;
-    else if (y <= -ATABLEMAX)
-        y = -ATABLEMAX;
-    if (x < 0)
-        x = -x;
-    if (x >= ATABLEMAX)
-        x = ATABLEMAX - 1;
-    leftchannel  =  lefttable[x][y + ATABLEMAX];
-    rightchannel = righttable[x][y + ATABLEMAX];
-
-#if 0
-    CenterWindow(8,1);
-    US_PrintSigned(leftchannel);
-    US_Print(",");
-    US_PrintSigned(rightchannel);
-    VW_UpdateScreen();
-#endif
-}
-
-/*
-==========================
-=
-= SetSoundLocGlobal - Sets up globalsoundx & globalsoundy and then calls
-=       UpdateSoundLoc() to transform that into relative channel volumes. Those
-=       values are then passed to the Sound Manager so that they'll be used for
-=       the next sound played (if possible).
-=
-= JAB
-=
-==========================
-*/
-void PlaySoundLocGlobal(word s,fixed gx,fixed gy)
-{
-}
-
-void UpdateSoundLoc(void)
-{
-/*    if (SoundPositioned)
-    {
-        SetSoundLoc(globalsoundx,globalsoundy);
-        SD_SetPosition(leftchannel,rightchannel);
-    }*/
-
-}
-
-/*
-**      JAB End
-*/
-
-/*
-==========================
-=
 = ScanInfoPlane
 =
 = Spawn all actors and mark down special places
@@ -753,12 +627,6 @@ void SetupGameLevel (void)
         }
     }
 
-
-//
-// have the caching manager load and purge stuff to make sure all marks
-// are in memory
-//
-    CA_LoadAllSounds ();
 }
 
 
@@ -1102,7 +970,6 @@ void RecordDemo (void)
     demorecord = true;
 
     SetupGameLevel ();
-    StartMusic ();
 
     fizzlein = true;
 
@@ -1110,9 +977,7 @@ void RecordDemo (void)
 
     demoplayback = false;
 
-    StopMusic ();
     VW_FadeOut ();
-    ClearMemory ();
 
     FinishDemoRecord ();
 }
@@ -1172,7 +1037,6 @@ void PlayDemo (int demonumber)
     demoplayback = true;
 
     SetupGameLevel ();
-    StartMusic ();
 
     PlayLoop ();
 
@@ -1183,9 +1047,6 @@ void PlayDemo (int demonumber)
 #endif
 
     demoplayback = false;
-
-    StopMusic ();
-    ClearMemory ();
 }
 
 //==========================================================================
@@ -1213,7 +1074,6 @@ void Died (void)
     }
 
     gamestate.weapon = (weapontype) -1;                     // take away weapon
-    SD_PlaySound (PLAYERDEATHSND);
 
     //
     // swing around to face attacker
@@ -1305,8 +1165,6 @@ void Died (void)
     FizzleFade(screenBuffer,viewscreenx,viewscreeny,viewwidth,viewheight,70,false);
 
     IN_UserInput(100);
-    SD_WaitSoundDone ();
-    ClearMemory();
 
     gamestate.lives--;
 
@@ -1351,7 +1209,6 @@ void GameLoop (void)
 #endif
 
 restartgame:
-    ClearMemory ();
     SETFONTCOLOR(0,15);
     VW_FadeOut();
     DrawPlayScreen ();
@@ -1377,10 +1234,8 @@ restartgame:
         ingame = true;
         if(loadedgame)
         {
-            ContinueMusic(lastgamemusicoffset);
             loadedgame = false;
         }
-        else StartMusic ();
 
         if (!died)
             PreloadGraphics ();             // TODO: Let this do something useful!
@@ -1400,20 +1255,9 @@ startplayloop:
 #ifdef SPEAR
         if (spearflag)
         {
-            SD_StopSound();
-            SD_PlaySound(GETSPEARSND);
-            if (DigiMode != sds_Off)
-            {
-                Delay(150);
-            }
-            else
-                SD_WaitSoundDone();
-
-            ClearMemory ();
             gamestate.oldscore = gamestate.score;
             gamestate.mapon = 20;
             SetupGameLevel ();
-            StartMusic ();
             player->x = spearx;
             player->y = speary;
             player->angle = (short)spearangle;
@@ -1423,7 +1267,6 @@ startplayloop:
         }
 #endif
 
-        StopMusic ();
         ingame = false;
 
         if (demorecord && playstate != ex_warped)
@@ -1441,8 +1284,6 @@ startplayloop:
                 DrawKeys ();
                 VW_FadeOut ();
 
-                ClearMemory ();
-
                 LevelCompleted ();              // do the intermission
                 if(viewsize == 21) DrawPlayScreen();
 
@@ -1452,8 +1293,6 @@ startplayloop:
                     died = true;                    // don't "get psyched!"
 
                     VW_FadeOut ();
-
-                    ClearMemory ();
 
                     CheckHighScore (gamestate.score,gamestate.mapon+1);
 #ifndef JAPAN
@@ -1470,8 +1309,6 @@ startplayloop:
                     died = true;                    // don't "get psyched!"
 
                     VW_FadeOut ();
-
-                    ClearMemory ();
 
                     CheckHighScore (gamestate.score,gamestate.mapon+1);
 #ifndef JAPAN
@@ -1543,8 +1380,6 @@ startplayloop:
                 DC_StatusClearLCD();
 #endif
 
-                ClearMemory ();
-
                 CheckHighScore (gamestate.score,gamestate.mapon+1);
 #ifndef JAPAN
                 strcpy(MainMenu[viewscores].string,STR_VS);
@@ -1559,11 +1394,8 @@ startplayloop:
 #else
                 VL_FadeOut (0,255,0,17,17,300);
 #endif
-                ClearMemory ();
 
                 Victory ();
-
-                ClearMemory ();
 
                 CheckHighScore (gamestate.score,gamestate.mapon+1);
 #ifndef JAPAN
@@ -1574,7 +1406,6 @@ startplayloop:
 
             default:
                 if(viewsize == 21) DrawPlayScreen();
-                ClearMemory ();
                 break;
         }
     } while (1);
