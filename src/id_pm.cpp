@@ -16,7 +16,7 @@ uint8_t **PMPages;
 
 void PM_Startup()
 {
-    char fname[13 + sizeof(DATADIR)] = DATADIR "vswap.";
+    char fname[17 + sizeof(DATADIR)] = DATADIR "vswap.";
     strcat(fname,extension);
     strcat(fname,".tns");
     

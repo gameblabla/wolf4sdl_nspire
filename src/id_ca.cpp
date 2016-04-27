@@ -438,7 +438,7 @@ void CA_RLEWexpand (word *source, word *dest, int32_t length, word rlewtag)
 
 void CAL_SetupGrFile (void)
 {
-    char fname[13 + sizeof(DATADIR)];
+    char fname[17 + sizeof(DATADIR)];
     int handle;
     byte *compseg;
 
@@ -529,6 +529,64 @@ void CAL_SetupGrFile (void)
 
 //==========================================================================
 
+/*
+ *  Code by rwill, thanks !
+ *  This fixes some portability issues with unalignement on
+ *  platforms like the TI-Nspire CX.
+*/
+
+uint8_t CAL_read_byte( int handle )
+{
+	uint8_t b;
+	read( handle, &b, sizeof( b ) );
+	return b;
+}
+
+uint16_t CAL_read_word( int handle )
+{
+	uint16_t w;
+	read( handle, &w, sizeof( w ) );
+	return w;
+}
+
+uint32_t CAL_read_dword( int handle )
+{
+	uint32_t dw;
+	read( handle, &dw, sizeof( dw ) );
+	return dw;
+}
+
+
+
+void CAL_read_mapfiletype( int handle, mapfiletype *ps_mapfiletype )
+{
+	int32_t i_idx;
+
+	ps_mapfiletype->RLEWtag = ( word )CAL_read_word( handle );
+
+	for( i_idx = 0; i_idx < NUMMAPS; i_idx++ )
+	{
+		ps_mapfiletype->headeroffsets[ i_idx ] = ( int32_t ) CAL_read_dword( handle );
+	}
+}
+
+void CAL_read_maptype( int handle, maptype *ps_maptype )
+{
+	int32_t i_idx;
+	ps_maptype->planestart[ 0 ] = ( int32_t ) CAL_read_dword( handle );
+	ps_maptype->planestart[ 1 ] = ( int32_t ) CAL_read_dword( handle );
+	ps_maptype->planestart[ 2 ] = ( int32_t ) CAL_read_dword( handle );
+	ps_maptype->planelength[ 0 ] = ( word ) CAL_read_word( handle );
+	ps_maptype->planelength[ 1 ] = ( word ) CAL_read_word( handle );
+	ps_maptype->planelength[ 2 ] = ( word ) CAL_read_word( handle );
+	ps_maptype->width = ( word ) CAL_read_word( handle );
+	ps_maptype->height = ( word ) CAL_read_word( handle );
+	
+	for( i_idx = 0; i_idx < 16; i_idx++ )
+	{
+		ps_maptype->name[ i_idx ] = ( char ) CAL_read_byte( handle );
+	}
+}
 
 /*
 ======================
@@ -543,7 +601,7 @@ void CAL_SetupMapFile (void)
     int     i;
     int handle;
     int32_t length,pos;
-    char fname[13 + sizeof(DATADIR)];
+    char fname[17 + sizeof(DATADIR)];
 
 //
 // load maphead.ext (offsets and tileinfo for map file)
@@ -559,7 +617,8 @@ void CAL_SetupMapFile (void)
     length = NUMMAPS*4+2; // used to be "filelength(handle);"
     mapfiletype *tinf=(mapfiletype *) malloc(sizeof(mapfiletype));
     CHECKMALLOCRESULT(tinf);
-    read(handle, tinf, length);
+    //read(handle, tinf, length);
+	CAL_read_mapfiletype( handle, tinf );
     close(handle);
 
     RLEWtag=tinf->RLEWtag;
@@ -597,7 +656,8 @@ void CAL_SetupMapFile (void)
         mapheaderseg[i]=(maptype *) malloc(sizeof(maptype));
         CHECKMALLOCRESULT(mapheaderseg[i]);
         lseek(maphandle,pos,SEEK_SET);
-        read (maphandle,(memptr)mapheaderseg[i],sizeof(maptype));
+        //read (maphandle,(memptr)mapheaderseg[i],sizeof(maptype));
+		CAL_read_maptype( maphandle, mapheaderseg[ i ] );
     }
 
     free(tinf);

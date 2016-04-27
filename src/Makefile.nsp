@@ -6,7 +6,7 @@ LD = nspire-gcc
 BINARY    ?= wolf3d
 DATADIR   = ./
 
-CFLAGS += -Ofast
+CFLAGS += -Ofast -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
 
 ifdef DATADIR
 CFLAGS += -DDATADIR=\"$(DATADIR)\"
@@ -14,7 +14,7 @@ endif
 
 CXXFLAGS += $(CFLAGS)
 
-LDFLAGS += -lSDL -Wl,--as-needed -flto
+LDFLAGS += -lSDL -Wl,--as-needed -Wl,--gc-sections -flto
 
 SRCS :=
 SRCS += id_ca.cpp
