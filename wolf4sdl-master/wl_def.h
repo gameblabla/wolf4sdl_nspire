@@ -10,17 +10,21 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdarg.h>
-
-#include <SDL/SDL.h>
+#if defined(_arch_dreamcast)
+#	include <string.h>
+#	include "dc/dc_main.h"
+#elif !defined(_WIN32)
+#	include <stdint.h>
+#	include <string.h>
+#	include <stdarg.h>
+#endif
+#include <SDL.h>
 
 #if !defined O_BINARY
 #	define O_BINARY 0
 #endif
 
-//#pragma pack(1)
+#pragma pack(1)
 
 #if defined(_arch_dreamcast)
 #define YESBUTTONNAME "A"
@@ -715,7 +719,7 @@ typedef void (* statefunc) (void *);
 
 typedef struct statestruct
 {
-    short rotate;
+    boolean rotate;
     short   shapenum;           // a shapenum of -1 means get from ob->temp1
     short   tictime;
     void    (*think) (void *),(*action) (void *);
@@ -909,7 +913,7 @@ extern  unsigned screenofs;
 extern  boolean  startgame;
 extern  char     str[80];
 extern  char     configdir[256];
-extern  char     configname[20];
+extern  char     configname[13];
 
 //
 // Command line parameter variables
@@ -1389,18 +1393,23 @@ static inline fixed FixedMul(fixed a, fixed b)
 
 #define CHECKMALLOCRESULT(x) if(!(x)) Quit("Out of memory at %s:%i", __FILE__, __LINE__)
 
-
-    inline char* itoa(int value, char* string, int radix)
+#ifdef _WIN32
+    #define strcasecmp stricmp
+    #define strncasecmp strnicmp
+    #define snprintf _snprintf
+#else
+    static inline char* itoa(int value, char* string, int radix)
     {
 	    sprintf(string, "%d", value);
 	    return string;
     }
 
-    inline char* ltoa(long value, char* string, int radix)
+    static inline char* ltoa(long value, char* string, int radix)
     {
 	    sprintf(string, "%ld", value);
 	    return string;
     }
+#endif
 
 #define lengthof(x) (sizeof(x) / sizeof(*(x)))
 #define endof(x)    ((x) + lengthof(x))

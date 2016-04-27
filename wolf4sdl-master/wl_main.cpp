@@ -1,12 +1,15 @@
 // WL_MAIN.C
-#include <unistd.h>
+
+#ifdef _WIN32
+    #include <io.h>
+#else
+    #include <unistd.h>
+#endif
 
 #include "wl_def.h"
 #pragma hdrstop
 #include "wl_atmos.h"
-#ifdef _TINSPIRE
-#include <libndls.h>
-#endif
+#include <SDL_syswm.h>
 
 
 /*
@@ -71,7 +74,7 @@ boolean loadedgame;
 int     mouseadjustment;
 
 char    configdir[256] = "";
-char    configname[20] = "config.";
+char    configname[13] = "config.";
 
 //
 // Command line parameter variables
@@ -82,10 +85,19 @@ int     param_difficulty = 1;           // default is "normal"
 int     param_tedlevel = -1;            // default is not to start a level
 int     param_joystickindex = 0;
 
+#if defined(_arch_dreamcast)
+int     param_joystickhat = 0;
+int     param_samplerate = 11025;       // higher samplerates result in "out of memory"
+int     param_audiobuffer = 4096 / (44100 / param_samplerate);
+#elif defined(GP2X_940)
+int     param_joystickhat = -1;
+int     param_samplerate = 11025;       // higher samplerates result in "out of memory"
+int     param_audiobuffer = 128;
+#else
 int     param_joystickhat = -1;
 int     param_samplerate = 44100;
 int     param_audiobuffer = 2048 / (44100 / param_samplerate);
-
+#endif
 
 int     param_mission = 0;
 boolean param_goodtimes = false;
@@ -121,15 +133,10 @@ void ReadConfig(void)
 #endif
 
     if(configdir[0])
-    {
         snprintf(configpath, sizeof(configpath), "%s/%s", configdir, configname);
-	}
     else
-    {
         strcpy(configpath, configname);
-        strcat(configpath, ".tns");
-	}
-        
+
     const int file = open(configpath, O_RDONLY | O_BINARY);
     if (file != -1)
     {
@@ -149,8 +156,19 @@ void ReadConfig(void)
         read(file,&sm,sizeof(sm));
         read(file,&sds,sizeof(sds));
 
+        read(file,&mouseenabled,sizeof(mouseenabled));
+        read(file,&joystickenabled,sizeof(joystickenabled));
+        boolean dummyJoypadEnabled;
+        read(file,&dummyJoypadEnabled,sizeof(dummyJoypadEnabled));
+        boolean dummyJoystickProgressive;
+        read(file,&dummyJoystickProgressive,sizeof(dummyJoystickProgressive));
+        int dummyJoystickPort = 0;
+        read(file,&dummyJoystickPort,sizeof(dummyJoystickPort));
+
         read(file,dirscan,sizeof(dirscan));
         read(file,buttonscan,sizeof(buttonscan));
+        read(file,buttonmouse,sizeof(buttonmouse));
+        read(file,buttonjoy,sizeof(buttonjoy));
 
         read(file,&viewsize,sizeof(viewsize));
         read(file,&mouseadjustment,sizeof(mouseadjustment));
@@ -168,7 +186,15 @@ void ReadConfig(void)
             sds = sds_Off;
 
         // make sure values are correct
-        
+
+        if(mouseenabled) mouseenabled=true;
+        if(joystickenabled) joystickenabled=true;
+
+        if (!MousePresent)
+            mouseenabled = false;
+        if (!IN_JoyPresent())
+            joystickenabled = false;
+
         if(mouseadjustment<0) mouseadjustment=0;
         else if(mouseadjustment>9) mouseadjustment=9;
 
@@ -195,9 +221,18 @@ noconfig:
             sm = smm_Off;
         }
 
-		sds = sds_Off;
-            
-        viewsize = 21;                          // start with a good size
+        if (SoundBlasterPresent)
+            sds = sds_SoundBlaster;
+        else
+            sds = sds_Off;
+
+        if (MousePresent)
+            mouseenabled = true;
+
+        if (IN_JoyPresent())
+            joystickenabled = true;
+
+        viewsize = 19;                          // start with a good size
         mouseadjustment=5;
     }
 
@@ -223,14 +258,9 @@ void WriteConfig(void)
 #endif
 
     if(configdir[0])
-    {
-        snprintf(configpath, sizeof(configpath), "%s/%s.tns", configdir, configname);
-	}
+        snprintf(configpath, sizeof(configpath), "%s/%s", configdir, configname);
     else
-    {
         strcpy(configpath, configname);
-        strcat(configpath, ".tns");
-	}
 
     const int file = open(configpath, O_CREAT | O_WRONLY | O_BINARY, 0644);
     if (file != -1)
@@ -243,8 +273,19 @@ void WriteConfig(void)
         write(file,&MusicMode,sizeof(MusicMode));
         write(file,&DigiMode,sizeof(DigiMode));
 
+        write(file,&mouseenabled,sizeof(mouseenabled));
+        write(file,&joystickenabled,sizeof(joystickenabled));
+        boolean dummyJoypadEnabled = false;
+        write(file,&dummyJoypadEnabled,sizeof(dummyJoypadEnabled));
+        boolean dummyJoystickProgressive = false;
+        write(file,&dummyJoystickProgressive,sizeof(dummyJoystickProgressive));
+        int dummyJoystickPort = 0;
+        write(file,&dummyJoystickPort,sizeof(dummyJoystickPort));
+
         write(file,dirscan,sizeof(dirscan));
         write(file,buttonscan,sizeof(buttonscan));
+        write(file,buttonmouse,sizeof(buttonmouse));
+        write(file,buttonjoy,sizeof(buttonjoy));
 
         write(file,&viewsize,sizeof(viewsize));
         write(file,&mouseadjustment,sizeof(mouseadjustment));
@@ -255,8 +296,6 @@ void WriteConfig(void)
     DC_SaveToVMU(configname, NULL);
 #endif
 }
-
-
 
 
 //===========================================================================
@@ -1167,9 +1206,49 @@ static void InitGame()
 #ifndef SPEARDEMO
     boolean didjukebox=false;
 #endif
+
     // initialize SDL
-    SDL_Init(SDL_INIT_VIDEO);
+#if defined _WIN32
+    putenv("SDL_VIDEODRIVER=directx");
+#endif
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) < 0)
+    {
+        printf("Unable to init SDL: %s\n", SDL_GetError());
+        exit(1);
+    }
+    atexit(SDL_Quit);
+
+    int numJoysticks = SDL_NumJoysticks();
+    if(param_joystickindex && (param_joystickindex < -1 || param_joystickindex >= numJoysticks))
+    {
+        if(!numJoysticks)
+            printf("No joysticks are available to SDL!\n");
+        else
+            printf("The joystick index must be between -1 and %i!\n", numJoysticks - 1);
+        exit(1);
+    }
+
+#if defined(GP2X_940)
+    GP2X_MemoryInit();
+#endif
+
     SignonScreen ();
+
+#if defined _WIN32
+    if(!fullscreen)
+    {
+        struct SDL_SysWMinfo wmInfo;
+        SDL_VERSION(&wmInfo.version);
+
+        if(SDL_GetWMInfo(&wmInfo) != -1)
+        {
+            HWND hwndSDL = wmInfo.window;
+            DWORD style = GetWindowLong(hwndSDL, GWL_STYLE) & ~WS_SYSMENU;
+            SetWindowLong(hwndSDL, GWL_STYLE, style);
+            SetWindowPos(hwndSDL, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        }
+    }
+#endif
 
     VH_Startup ();
     IN_Startup ();
@@ -1178,11 +1257,33 @@ static void InitGame()
     CA_Startup ();
     US_Startup ();
 
+    // TODO: Will any memory checking be needed someday??
+#ifdef NOTYET
+#ifndef SPEAR
+    if (mminfo.mainmem < 235000L)
+#else
+    if (mminfo.mainmem < 257000L && !MS_CheckParm("debugmode"))
+#endif
+    {
+        byte *screen;
+
+        CA_CacheGrChunk (ERRORSCREEN);
+        screen = grsegs[ERRORSCREEN];
+        ShutdownId();
+/*        memcpy((byte *)0xb8000,screen+7+7*160,17*160);
+        gotoxy (1,23);*/
+        exit(1);
+    }
+#endif
+
+
 //
 // build some tables
 //
     InitDigiMap ();
+
     ReadConfig ();
+
     SetupSaveGames();
 
 //
@@ -1201,6 +1302,10 @@ static void InitGame()
 // draw intro screen stuff
 //
     IntroScreen ();
+
+#ifdef _arch_dreamcast
+    //TODO: VMU Selection Screen
+#endif
 
 //
 // load in and lock down some basic chunks
@@ -1223,6 +1328,11 @@ static void InitGame()
     if(!didjukebox)
 #endif
         FinishSignon();
+
+#ifdef NOTYET
+    vdisp = (byte *) (0xa0000+PAGE1START);
+    vbuf = (byte *) (0xa0000+PAGE2START);
+#endif
 }
 
 //===========================================================================
@@ -1246,7 +1356,7 @@ boolean SetViewSize (unsigned width, unsigned height)
     else
     {
         viewscreenx = (screenWidth-viewwidth) / 2;
-        viewscreeny = (screenHeight-STATUSLINES-viewheight)/2;
+        viewscreeny = (screenHeight-scaleFactor*STATUSLINES-viewheight)/2;
         screenofs = viewscreeny*screenWidth+viewscreenx;
     }
 
@@ -1265,25 +1375,25 @@ void ShowViewSize (int width)
 
     oldwidth = viewwidth;
     oldheight = viewheight;
-    
-    switch(width)
+
+    if(width == 21)
     {
-		case 21:
-			viewwidth = screenWidth;
-			viewheight = screenHeight;
-			VWB_BarScaledCoord (0, 0, screenWidth, screenHeight, 0);
-		break;
-		case 20:
-			viewwidth = screenWidth;
-			viewheight = screenHeight - STATUSLINES;
-			DrawPlayBorder ();
-		break;
-		default:
-			viewwidth = width*16*screenWidth/320;
-			viewheight = (int) (width*16*HEIGHTRATIO*screenHeight/200);
-			DrawPlayBorder ();
-		break;
-	}
+        viewwidth = screenWidth;
+        viewheight = screenHeight;
+        VWB_BarScaledCoord (0, 0, screenWidth, screenHeight, 0);
+    }
+    else if(width == 20)
+    {
+        viewwidth = screenWidth;
+        viewheight = screenHeight - scaleFactor*STATUSLINES;
+        DrawPlayBorder ();
+    }
+    else
+    {
+        viewwidth = width*16*screenWidth/320;
+        viewheight = (int) (width*16*HEIGHTRATIO*screenHeight/200);
+        DrawPlayBorder ();
+    }
 
     viewwidth = oldwidth;
     viewheight = oldheight;
@@ -1296,7 +1406,7 @@ void NewViewSize (int width)
     if(viewsize == 21)
         SetViewSize(screenWidth, screenHeight);
     else if(viewsize == 20)
-        SetViewSize(screenWidth, screenHeight - STATUSLINES);
+        SetViewSize(screenWidth, screenHeight - scaleFactor * STATUSLINES);
     else
         SetViewSize(width*16*screenWidth/320, (unsigned) (width*16*HEIGHTRATIO*screenHeight/200));
 }
@@ -1315,6 +1425,9 @@ void NewViewSize (int width)
 
 void Quit (const char *errorStr, ...)
 {
+#ifdef NOTYET
+    byte *screen;
+#endif
     char error[256];
     if(errorStr != NULL)
     {
@@ -1330,24 +1443,60 @@ void Quit (const char *errorStr, ...)
         ShutdownId();
         if (error && *error)
         {
+#ifdef NOTYET
+            SetTextCursor(0,0);
+#endif
             puts(error);
+#ifdef NOTYET
+            SetTextCursor(0,2);
+#endif
             VW_WaitVBL(100);
         }
         exit(1);
     }
-    
+
     if (!error || !*error)
     {
+#ifdef NOTYET
+        #ifndef JAPAN
+        CA_CacheGrChunk (ORDERSCREEN);
+        screen = grsegs[ORDERSCREEN];
+        #endif
+#endif
         WriteConfig ();
     }
+#ifdef NOTYET
+    else
+    {
+        CA_CacheGrChunk (ERRORSCREEN);
+        screen = grsegs[ERRORSCREEN];
+    }
+#endif
 
     ShutdownId ();
 
     if (error && *error)
     {
+#ifdef NOTYET
+        memcpy((byte *)0xb8000,screen+7,7*160);
+        SetTextCursor(9,3);
+#endif
         puts(error);
+#ifdef NOTYET
+        SetTextCursor(0,7);
+#endif
         VW_WaitVBL(200);
         exit(1);
+    }
+    else
+    if (!error || !(*error))
+    {
+#ifdef NOTYET
+        #ifndef JAPAN
+        memcpy((byte *)0xb8000,screen+7,24*160); // 24 for SPEAR/UPLOAD compatibility
+        #endif
+        SetTextCursor(0,23);
+#endif
     }
 
     exit(0);
@@ -1520,6 +1669,269 @@ static void DemoLoop()
 }
 
 
+//===========================================================================
+
+#define IFARG(str) if(!strcmp(arg, (str)))
+
+void CheckParameters(int argc, char *argv[])
+{
+    bool hasError = false, showHelp = false;
+    bool sampleRateGiven = false, audioBufferGiven = false;
+    int defaultSampleRate = param_samplerate;
+
+    for(int i = 1; i < argc; i++)
+    {
+        char *arg = argv[i];
+#ifndef SPEAR
+        IFARG("--goobers")
+#else
+        IFARG("--debugmode")
+#endif
+            param_debugmode = true;
+        else IFARG("--baby")
+            param_difficulty = 0;
+        else IFARG("--easy")
+            param_difficulty = 1;
+        else IFARG("--normal")
+            param_difficulty = 2;
+        else IFARG("--hard")
+            param_difficulty = 3;
+        else IFARG("--nowait")
+            param_nowait = true;
+        else IFARG("--tedlevel")
+        {
+            if(++i >= argc)
+            {
+                printf("The tedlevel option is missing the level argument!\n");
+                hasError = true;
+            }
+            else param_tedlevel = atoi(argv[i]);
+        }
+        else IFARG("--windowed")
+            fullscreen = false;
+        else IFARG("--windowed-mouse")
+        {
+            fullscreen = false;
+            forcegrabmouse = true;
+        }
+        else IFARG("--res")
+        {
+            if(i + 2 >= argc)
+            {
+                printf("The res option needs the width and/or the height argument!\n");
+                hasError = true;
+            }
+            else
+            {
+                screenWidth = atoi(argv[++i]);
+                screenHeight = atoi(argv[++i]);
+                unsigned factor = screenWidth / 320;
+                if(screenWidth % 320 || screenHeight != 200 * factor && screenHeight != 240 * factor)
+                    printf("Screen size must be a multiple of 320x200 or 320x240!\n"), hasError = true;
+            }
+        }
+        else IFARG("--resf")
+        {
+            if(i + 2 >= argc)
+            {
+                printf("The resf option needs the width and/or the height argument!\n");
+                hasError = true;
+            }
+            else
+            {
+                screenWidth = atoi(argv[++i]);
+                screenHeight = atoi(argv[++i]);
+                if(screenWidth < 320)
+                    printf("Screen width must be at least 320!\n"), hasError = true;
+                if(screenHeight < 200)
+                    printf("Screen height must be at least 200!\n"), hasError = true;
+            }
+        }
+        else IFARG("--bits")
+        {
+            if(++i >= argc)
+            {
+                printf("The bits option is missing the color depth argument!\n");
+                hasError = true;
+            }
+            else
+            {
+                screenBits = atoi(argv[i]);
+                switch(screenBits)
+                {
+                    case 8:
+                    case 16:
+                    case 24:
+                    case 32:
+                        break;
+
+                    default:
+                        printf("Screen color depth must be 8, 16, 24, or 32!\n");
+                        hasError = true;
+                        break;
+                }
+            }
+        }
+        else IFARG("--nodblbuf")
+            usedoublebuffering = false;
+        else IFARG("--extravbls")
+        {
+            if(++i >= argc)
+            {
+                printf("The extravbls option is missing the vbls argument!\n");
+                hasError = true;
+            }
+            else
+            {
+                extravbls = atoi(argv[i]);
+                if(extravbls < 0)
+                {
+                    printf("Extravbls must be positive!\n");
+                    hasError = true;
+                }
+            }
+        }
+        else IFARG("--joystick")
+        {
+            if(++i >= argc)
+            {
+                printf("The joystick option is missing the index argument!\n");
+                hasError = true;
+            }
+            else param_joystickindex = atoi(argv[i]);   // index is checked in InitGame
+        }
+        else IFARG("--joystickhat")
+        {
+            if(++i >= argc)
+            {
+                printf("The joystickhat option is missing the index argument!\n");
+                hasError = true;
+            }
+            else param_joystickhat = atoi(argv[i]);
+        }
+        else IFARG("--samplerate")
+        {
+            if(++i >= argc)
+            {
+                printf("The samplerate option is missing the rate argument!\n");
+                hasError = true;
+            }
+            else param_samplerate = atoi(argv[i]);
+            sampleRateGiven = true;
+        }
+        else IFARG("--audiobuffer")
+        {
+            if(++i >= argc)
+            {
+                printf("The audiobuffer option is missing the size argument!\n");
+                hasError = true;
+            }
+            else param_audiobuffer = atoi(argv[i]);
+            audioBufferGiven = true;
+        }
+        else IFARG("--mission")
+        {
+            if(++i >= argc)
+            {
+                printf("The mission option is missing the mission argument!\n");
+                hasError = true;
+            }
+            else
+            {
+                param_mission = atoi(argv[i]);
+                if(param_mission < 0 || param_mission > 3)
+                {
+                    printf("The mission option must be between 0 and 3!\n");
+                    hasError = true;
+                }
+            }
+        }
+        else IFARG("--configdir")
+        {
+            if(++i >= argc)
+            {
+                printf("The configdir option is missing the dir argument!\n");
+                hasError = true;
+            }
+            else
+            {
+                size_t len = strlen(argv[i]);
+                if(len + 2 > sizeof(configdir))
+                {
+                    printf("The config directory is too long!\n");
+                    hasError = true;
+                }
+                else
+                {
+                    strcpy(configdir, argv[i]);
+                    if(argv[i][len] != '/' && argv[i][len] != '\\')
+                        strcat(configdir, "/");
+                }
+            }
+        }
+        else IFARG("--goodtimes")
+            param_goodtimes = true;
+        else IFARG("--ignorenumchunks")
+            param_ignorenumchunks = true;
+        else IFARG("--help")
+            showHelp = true;
+        else hasError = true;
+    }
+    if(hasError || showHelp)
+    {
+        if(hasError) printf("\n");
+        printf(
+            "Wolf4SDL v1.7 ($Revision: 256 $)\n"
+            "Ported by Chaos-Software (http://www.chaos-software.de.vu)\n"
+            "Original Wolfenstein 3D by id Software\n\n"
+            "Usage: Wolf4SDL [options]\n"
+            "Options:\n"
+            " --help                 This help page\n"
+            " --tedlevel <level>     Starts the game in the given level\n"
+            " --baby                 Sets the difficulty to baby for tedlevel\n"
+            " --easy                 Sets the difficulty to easy for tedlevel\n"
+            " --normal               Sets the difficulty to normal for tedlevel\n"
+            " --hard                 Sets the difficulty to hard for tedlevel\n"
+            " --nowait               Skips intro screens\n"
+            " --windowed[-mouse]     Starts the game in a window [and grabs mouse]\n"
+            " --res <width> <height> Sets the screen resolution\n"
+            "                        (must be multiple of 320x200 or 320x240)\n"
+            " --resf <w> <h>         Sets any screen resolution >= 320x200\n"
+            "                        (which may result in graphic errors)\n"
+            " --bits <b>             Sets the screen color depth\n"
+            "                        (use this when you have palette/fading problems\n"
+            "                        allowed: 8, 16, 24, 32, default: \"best\" depth)\n"
+            " --nodblbuf             Don't use SDL's double buffering\n"
+            " --extravbls <vbls>     Sets a delay after each frame, which may help to\n"
+            "                        reduce flickering (unit is currently 8 ms, default: 0)\n"
+            " --joystick <index>     Use the index-th joystick if available\n"
+            "                        (-1 to disable joystick, default: 0)\n"
+            " --joystickhat <index>  Enables movement with the given coolie hat\n"
+            " --samplerate <rate>    Sets the sound sample rate (given in Hz, default: %i)\n"
+            " --audiobuffer <size>   Sets the size of the audio buffer (-> sound latency)\n"
+            "                        (given in bytes, default: 2048 / (44100 / samplerate))\n"
+            " --ignorenumchunks      Ignores the number of chunks in VGAHEAD.*\n"
+            "                        (may be useful for some broken mods)\n"
+            " --configdir <dir>      Directory where config file and save games are stored\n"
+#if defined(_arch_dreamcast) || defined(_WIN32)
+            "                        (default: current directory)\n"
+#else
+            "                        (default: $HOME/.wolf4sdl)\n"
+#endif
+#if defined(SPEAR) && !defined(SPEARDEMO)
+            " --mission <mission>    Mission number to play (0-3)\n"
+            "                        (default: 0 -> .sod, 1-3 -> .sd*)\n"
+            " --goodtimes            Disable copy protection quiz\n"
+#endif
+            , defaultSampleRate
+        );
+        exit(1);
+    }
+
+    if(sampleRateGiven && !audioBufferGiven)
+        param_audiobuffer = 2048 / (44100 / param_samplerate);
+}
+
 /*
 ==========================
 =
@@ -1530,9 +1942,12 @@ static void DemoLoop()
 
 int main (int argc, char *argv[])
 {
-	#ifdef _TINSPIRE
-	enable_relative_paths(argv);
-	#endif
+#if defined(_arch_dreamcast)
+    DC_Init();
+#else
+    CheckParameters(argc, argv);
+#endif
+
     CheckForEpisodes();
 
     InitGame();
@@ -1540,5 +1955,5 @@ int main (int argc, char *argv[])
     DemoLoop();
 
     Quit("Demo loop exited???");
-    return 0;
+    return 1;
 }
