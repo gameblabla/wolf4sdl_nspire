@@ -1485,10 +1485,11 @@ CP_LoadGame (int quick)
 {
     FILE *file;
     int which, exit = 0;
-    char name[13];
+    char name[20];
     char loadpath[300];
 
     strcpy (name, SaveName);
+    strcat (name, ".tns");
 
     //
     // QUICKLOAD?
@@ -1677,12 +1678,13 @@ CP_SaveGame (int quick)
 {
     int which, exit = 0;
     FILE *file;
-    char name[13];
+    char name[20];
     char savepath[300];
     char input[32];
 
     strcpy (name, SaveName);
-
+    strcat (name, ".tns");
+    
     //
     // QUICKSAVE?
     //
