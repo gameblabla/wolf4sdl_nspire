@@ -1073,7 +1073,7 @@ void Died (void)
         VW_FadeIn ();
     }
 
-    gamestate.weapon = (weapontype) -1;                     // take away weapon
+    gamestate.weapon = wp_none;                     // take away weapon
 
     //
     // swing around to face attacker

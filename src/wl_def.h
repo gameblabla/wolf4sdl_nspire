@@ -829,10 +829,11 @@ enum
 #define NUMWEAPONS      4
 typedef enum
 {
-    wp_knife,
-    wp_pistol,
-    wp_machinegun,
-    wp_chaingun
+    wp_none = -1,
+    wp_knife = 0,
+    wp_pistol = 1,
+    wp_machinegun = 2,
+    wp_chaingun = 3
 } weapontype;
 
 

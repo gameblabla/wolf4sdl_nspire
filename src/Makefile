@@ -4,9 +4,9 @@ LD = gcc
 
 DATADIR   = ./
 
-WOLF_VERSION = SPEAR_DEMO
+WOLF_VERSION = SHAREWARE
 
-CFLAGS += -Ofast -fdata-sections -ffunction-sections -marm -march=armv5te -mtune=arm926ej-s
+CFLAGS += -Ofast
 
 ifdef DATADIR
 CFLAGS += -DDATADIR=\"$(DATADIR)\"
